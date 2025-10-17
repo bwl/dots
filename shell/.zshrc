@@ -1,0 +1,220 @@
+# =============================================================================
+# Powerlevel10k Instant Prompt
+# =============================================================================
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# =============================================================================
+# History Configuration
+# =============================================================================
+
+setopt EXTENDED_HISTORY       # Write the history file in the ':start:elapsed;command' format
+setopt INC_APPEND_HISTORY     # Write to the history file immediately, not when the shell exits
+setopt SHARE_HISTORY          # Share history between all sessions
+setopt HIST_IGNORE_DUPS       # Do not record an event that was just recorded again
+setopt HIST_IGNORE_ALL_DUPS   # Delete an old recorded event if a new event is a duplicate
+setopt HIST_IGNORE_SPACE      # Do not record an event starting with a space
+setopt HIST_SAVE_NO_DUPS      # Do not write a duplicate event to the history file
+setopt HIST_VERIFY            # Do not execute immediately upon history expansion
+setopt APPEND_HISTORY         # Append to history file (default)
+setopt HIST_NO_STORE          # Don't store history commands
+setopt HIST_REDUCE_BLANKS     # Remove superfluous blanks from each command line
+
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=10000000
+SAVEHIST=10000000
+HIST_STAMPS="yyyy-mm-dd"
+HISTORY_IGNORE="(ls|cd|pwd|exit)*"
+
+# =============================================================================
+# Input/Output Configuration
+# =============================================================================
+
+# Set editor default keymap to emacs (`-e`) or vi (`-v`)
+bindkey -e
+
+# Remove path separator from WORDCHARS
+WORDCHARS=${WORDCHARS//[\/]}
+
+# =============================================================================
+# Zim Framework Configuration
+# =============================================================================
+
+# zsh-autosuggestions
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+
+# zsh-syntax-highlighting
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
+
+# =============================================================================
+# Zim Framework Initialization
+# =============================================================================
+
+ZIM_HOME=${ZDOTDIR:-${HOME}}/.zim
+
+# Download zimfw plugin manager if missing
+if [[ ! -e ${ZIM_HOME}/zimfw.zsh ]]; then
+  if (( ${+commands[curl]} )); then
+    curl -fsSL --create-dirs -o ${ZIM_HOME}/zimfw.zsh \
+        https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh
+  else
+    mkdir -p ${ZIM_HOME} && wget -nv -O ${ZIM_HOME}/zimfw.zsh \
+        https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh
+  fi
+fi
+
+# Install missing modules, and update ${ZIM_HOME}/init.zsh if missing or outdated
+if [[ ! ${ZIM_HOME}/init.zsh -nt ${ZDOTDIR:-${HOME}}/.zimrc ]]; then
+  source ${ZIM_HOME}/zimfw.zsh init -q
+fi
+
+# Initialize modules
+source ${ZIM_HOME}/init.zsh
+
+# =============================================================================
+# Zim Post-Init Configuration
+# =============================================================================
+
+# zsh-history-substring-search keybindings
+zmodload -F zsh/terminfo +p:terminfo
+for key ('^[[A' '^P' ${terminfo[kcuu1]}) bindkey ${key} history-substring-search-up
+for key ('^[[B' '^N' ${terminfo[kcud1]}) bindkey ${key} history-substring-search-down
+for key ('k') bindkey -M vicmd ${key} history-substring-search-up
+for key ('j') bindkey -M vicmd ${key} history-substring-search-down
+unset key
+
+# =============================================================================
+# PATH Configuration
+# =============================================================================
+
+export PATH="/opt/homebrew/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/bin:$PATH"
+export PATH="$HOME/Developer/cliffy/bin:$PATH"
+export PATH="$GOPATH/bin:$PATH"
+export PATH="/usr/local/go/bin:$PATH"
+
+# =============================================================================
+# Environment Variables
+# =============================================================================
+
+# Homebrew
+export HOMEBREW_CASK_OPTS="--appdir=$HOME/Applications"
+export HOMEBREW_NO_AUTO_UPDATE=TRUE
+
+# Go
+export GOPATH=$HOME/go
+
+# FZF - Use ripgrep for file searching
+export FZF_DEFAULT_COMMAND='rg --files --hidden --glob "!.git"'
+
+# Pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+
+# =============================================================================
+# Language Version Managers
+# =============================================================================
+
+# Pyenv initialization
+if command -v pyenv &> /dev/null; then
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+fi
+
+# =============================================================================
+# Aliases
+# =============================================================================
+
+# Note: GNU grep alias - requires 'brew install grep'
+# Uncomment if you want GNU grep instead of macOS grep
+# alias grep="ggrep"
+
+alias claude="$HOME/.claude/local/claude"
+alias tarot="$HOME/Developer/tarot/tarot"
+
+# =============================================================================
+# Functions
+# =============================================================================
+
+# cdx - Codex wrapper with update capability
+cdx() {
+  if [[ "$1" == "update" ]]; then
+    npm install -g @openai/codex@latest
+  else
+    codex \
+      -m gpt-5-codex \
+      -c model_reasoning_summary_format=experimental \
+      --search "$@"
+  fi
+}
+
+# glowf - Find and view markdown files with glow
+glowf() {
+  local file
+  file=$(find . -type f -name '*.md' | fzf --preview 'glow --style=dark --pager {}')
+  [ -n "$file" ] && glow "$file"
+}
+
+# tb - Smart taskbook wrapper (uses local .taskbook if present)
+tb() {
+  if [[ -d .taskbook ]]; then
+    command tb --storage-dir ./.taskbook "$@"
+  else
+    command tb "$@"
+  fi
+}
+
+# =============================================================================
+# Completions
+# =============================================================================
+
+# Docker CLI completions
+fpath=($HOME/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+
+# Crush completions (dynamic)
+if (( $+commands[crush] )); then
+  source <(crush completion zsh)
+fi
+
+# Cliffy completions (dynamic)
+if (( $+commands[cliffy] )); then
+  source <(cliffy completion zsh)
+fi
+
+# BEX completions (if available)
+[[ -f $HOME/.bex-completion.zsh ]] && source $HOME/.bex-completion.zsh
+
+# =============================================================================
+# External Tool Integrations
+# =============================================================================
+
+# Broot launcher
+[[ -f $HOME/.config/broot/launcher/bash/br ]] && source $HOME/.config/broot/launcher/bash/br
+
+# Langflow environment
+[[ -f $HOME/.langflow/uv/env ]] && source $HOME/.langflow/uv/env
+
+# Zoxide (smart cd)
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init zsh)"
+fi
+
+# Tmuxifier
+if command -v tmuxifier &> /dev/null; then
+  eval "$(tmuxifier init -)"
+fi
+
+# =============================================================================
+# Theme Configuration
+# =============================================================================
+
+# Powerlevel10k theme
+[[ ! -f $HOME/.p10k.zsh ]] || source $HOME/.p10k.zsh
