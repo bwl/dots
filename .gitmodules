@@ -1,0 +1,39 @@
+[submodule "config/ghostty/shaders"]
+	path = config/ghostty/shaders
+	url = https://github.com/hackr-sh/ghostty-shaders
+[submodule "config/tmux/plugins/catppuccin/tmux"]
+	path = config/tmux/plugins/catppuccin/tmux
+	url = https://github.com/catppuccin/tmux.git
+[submodule "config/tmux/plugins/tmux-battery"]
+	path = config/tmux/plugins/tmux-battery
+	url = https://github.com/tmux-plugins/tmux-battery
+[submodule "config/tmux/plugins/tmux-cpu"]
+	path = config/tmux/plugins/tmux-cpu
+	url = https://github.com/tmux-plugins/tmux-cpu
+[submodule "config/tmux/plugins/tmux-fzf"]
+	path = config/tmux/plugins/tmux-fzf
+	url = https://github.com/sainnhe/tmux-fzf
+[submodule "config/tmux/plugins/tmux-harpoon"]
+	path = config/tmux/plugins/tmux-harpoon
+	url = https://github.com/Chaitanyabsprip/tmux-harpoon
+[submodule "config/tmux/plugins/tmux-pop"]
+	path = config/tmux/plugins/tmux-pop
+	url = https://github.com/roosta/tmux-pop
+[submodule "config/tmux/plugins/tmux-prefix-highlight"]
+	path = config/tmux/plugins/tmux-prefix-highlight
+	url = https://github.com/tmux-plugins/tmux-prefix-highlight
+[submodule "config/tmux/plugins/tmux-sensible"]
+	path = config/tmux/plugins/tmux-sensible
+	url = https://github.com/tmux-plugins/tmux-sensible
+[submodule "config/tmux/plugins/tmux-sidebar"]
+	path = config/tmux/plugins/tmux-sidebar
+	url = https://github.com/tmux-plugins/tmux-sidebar
+[submodule "config/tmux/plugins/tmux-yank"]
+	path = config/tmux/plugins/tmux-yank
+	url = https://github.com/tmux-plugins/tmux-yank
+[submodule "config/tmux/plugins/tpm"]
+	path = config/tmux/plugins/tpm
+	url = https://github.com/tmux-plugins/tpm
+[submodule "config/tmux/tmux-menus"]
+	path = config/tmux/tmux-menus
+	url = https://github.com/jaclu/tmux-menus

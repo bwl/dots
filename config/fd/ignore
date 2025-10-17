@@ -1,0 +1,8 @@
+/nix/
+/System/
+/Library/
+/private/
+/usr/
+/Users/bwl/Library/*
+/Users/bwl/!/Library/CloudStorage/
+/Users/bwl/**/*.photoslibrary/

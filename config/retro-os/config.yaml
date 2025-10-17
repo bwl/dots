@@ -1,0 +1,5 @@
+# RETRO-OS Configuration
+error_mode: status-bar  # Options: silent, status-bar, popup
+error_log: ~/.local/state/retro-os/error.log
+refresh_rate: 30  # seconds for sampler auto-refresh
+theme: catppuccin-mocha

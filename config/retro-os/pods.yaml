@@ -1,0 +1,78 @@
+pods:
+  - name: files
+    icon: "📁"
+    description: "Browse files with yazi"
+    command: "yazi"
+    persistent: true
+    window_name: "files"
+
+  - name: editor
+    icon: "✏️"
+    description: "Edit files with neovim"
+    command: "nvim"
+    persistent: true
+    window_name: "editor"
+    accepts_args: true
+
+  - name: monitor
+    icon: "🔧"
+    description: "System monitor (htop)"
+    command: "htop"
+    persistent: false
+    window_name: "monitor"
+
+  - name: music
+    icon: "🎵"
+    description: "Music player (musikcube)"
+    command: "~/bin/pods/music.sh"
+    persistent: true
+    window_name: "music"
+
+  - name: tasks
+    icon: "📋"
+    description: "Task management (taskbook)"
+    command: "~/bin/pods/tasks.sh"
+    persistent: true
+    window_name: "tasks"
+
+  - name: notes
+    icon: "📝"
+    description: "Notes editor"
+    command: "~/bin/pods/notes.sh"
+    persistent: true
+    window_name: "notes"
+
+  - name: git
+    icon: "🔀"
+    description: "Git interface (lazygit)"
+    command: "~/bin/pods/git.sh"
+    persistent: true
+    window_name: "git"
+
+  - name: admin
+    icon: "⚙️"
+    description: "RETRO-OS admin panel"
+    command: "~/bin/pods/admin.sh"
+    persistent: false
+    window_name: "admin"
+
+  - name: email
+    icon: "📧"
+    description: "Email client (mock)"
+    command: "~/bin/pods/email.sh"
+    persistent: false
+    window_name: "email"
+
+  - name: calendar
+    icon: "📅"
+    description: "Calendar (mock)"
+    command: "~/bin/pods/calendar.sh"
+    persistent: false
+    window_name: "calendar"
+
+  - name: help
+    icon: "❓"
+    description: "RETRO-OS help documentation"
+    command: "~/bin/pods/help.sh"
+    persistent: false
+    window_name: "help"

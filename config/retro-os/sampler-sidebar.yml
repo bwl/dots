@@ -1,0 +1,28 @@
+textboxes:
+  - title: QUICK ACTIONS
+    position: [[0, 0], [0, 6]]
+    sample: |
+      echo "e - Email"
+      echo "f - Files"
+      echo "m - Music"
+      echo "t - Tasks"
+
+  - title: RECENT
+    position: [[0, 7], [0, 8]]
+    sample: |
+      if command -v zoxide >/dev/null 2>&1; then
+        zoxide query -l 2>/dev/null | head -5 | xargs -n1 basename
+      else
+        ls -t ~/Developer 2>/dev/null | head -5
+      fi
+    rate-ms: 30000
+
+  - title: TASKS
+    position: [[0, 16], [0, 0]]
+    sample: |
+      if command -v tb >/dev/null 2>&1; then
+        tb 2>/dev/null | head -30
+      else
+        echo "No tasks yet"
+      fi
+    rate-ms: 30000
