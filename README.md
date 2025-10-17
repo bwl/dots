@@ -1,6 +1,6 @@
 # bwl/dots
 
-Personal macOS development environment with automated setup and Bitwarden secret management.
+Personal macOS environment with automated setup and Bitwarden secret management.
 
 **Contents:**
 - 55 Homebrew packages
@@ -183,9 +183,11 @@ brew update && brew upgrade
 cd ~/dotfiles
 git pull
 
+# Relink dotfiles
+./scripts/setup_symlinks.sh --force
+
 # Reinstall if needed
 brew bundle install
-./scripts/setup_symlinks.sh --force
 ```
 
 ### Cleanup
@@ -202,49 +204,6 @@ brew doctor
 ```
 
 ---
-
-## Troubleshooting
-
-**Symlinks not working:**
-```bash
-ls -la ~/.zshrc  # Check symlink
-cd ~/dotfiles && ./scripts/setup_symlinks.sh --force
-```
-
-**Homebrew fails:**
-```bash
-brew update
-brew doctor
-```
-
-**Bitwarden unlock:**
-```bash
-bw login
-bw unlock  # Copy session key
-bw status  # Verify
-```
-
-**Config not loading:**
-```bash
-source ~/.zshrc  # Check for errors
-ls -la ~/.config/appname  # Verify symlink
-```
-
-**Restore from backup:**
-```bash
-ls ~/dotfiles_backup_*
-cp ~/dotfiles_backup_YYYYMMDD_HHMMSS/.zshrc ~/
-```
-
----
-
-## Additional Documentation
-
-- [APPLICATIONS.md](APPLICATIONS.md) - Application-specific configs
-- [CLAUDE.md](CLAUDE.md) - AI assistant instructions
-
----
-
 ## License
 
 MIT
