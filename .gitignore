@@ -1,0 +1,129 @@
+# Dotfiles .gitignore - Security First!
+# NEVER commit secrets, keys, or sensitive data
+
+# ============================================================================
+# SSH Keys & Certificates (CRITICAL - NEVER COMMIT)
+# ============================================================================
+ssh/id_*
+ssh/*.pem
+ssh/*.key
+ssh/*.pub
+ssh/known_hosts
+ssh/authorized_keys
+*.ppk
+
+# ============================================================================
+# API Keys & Secrets (CRITICAL - NEVER COMMIT)
+# ============================================================================
+**/*secret*
+**/*password*
+**/*token*
+**/*.env
+**/*.env.*
+.env
+.env.*
+
+# Bitwarden session
+.bw_session
+
+# Claude Code CLI (contains API keys and personal settings)
+.claude/
+CLAUDE.md
+
+# ============================================================================
+# Application-Specific Secrets
+# ============================================================================
+
+# GitHub CLI
+config/gh/hosts.yml
+
+# Raycast (config.json contains access token)
+config/raycast/config.json
+
+# Syncthing certificates (regenerated per install)
+app-configs/syncthing-config.xml.bak
+**/*cert.pem
+**/*key.pem
+
+# macOS Keychain exports
+*.keychain
+*.keychain-db
+
+# GPG Keys
+**/*.gpg
+**/*.asc
+config/gnupg/
+
+# ============================================================================
+# Cache & Temporary Files
+# ============================================================================
+*.log
+*.swp
+*.swo
+*~
+.DS_Store
+._.DS_Store
+**/.DS_Store
+
+# Shell history (may contain sensitive commands)
+.zsh_history
+.bash_history
+.python_history
+.psql_history
+
+# ============================================================================
+# Large/Generated Configs to Exclude
+# ============================================================================
+
+# Node modules (if any config tools use them)
+node_modules/
+**/node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Raycast (too large - 341MB)
+config/raycast/
+
+# Emacs (too large - 624MB)
+config/emacs/
+
+# Retroarch (too large - 109MB)
+config/retroarch/
+
+# ============================================================================
+# Backup Files
+# ============================================================================
+*.bak
+*.backup
+*.old
+*_backup
+*_old
+
+# ============================================================================
+# System Files
+# ============================================================================
+.localized
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ============================================================================
+# Development
+# ============================================================================
+.vscode/
+.idea/
+*.iml
+
+# ============================================================================
+# Per-Machine Overrides
+# ============================================================================
+# Files that differ per machine (work vs personal)
+*.local
+*_local.*
