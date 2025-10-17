@@ -1,0 +1,62 @@
+{
+  "claude": {
+    "name": "Claude Code",
+    "model": "Claude Sonnet 4.5",
+    "role": "AI-assisted coding with full tool access",
+    "description": "Interactive development, code editing, complex multi-step tasks",
+    "capabilities": [
+      "File operations (read, write, edit)",
+      "Shell command execution",
+      "Code analysis and refactoring",
+      "Multi-step task planning"
+    ]
+  },
+  "codex": {
+    "name": "Codex",
+    "model": "Codex Agent (Anthropic)",
+    "role": "Codebase exploration and analysis",
+    "description": "Understanding architecture, searching code, generating insights",
+    "capabilities": [
+      "Semantic code search",
+      "Architecture analysis",
+      "Documentation generation",
+      "Code pattern detection"
+    ]
+  },
+  "cliffy": {
+    "name": "Cliffy",
+    "model": "Non-interactive LLM Runner",
+    "role": "Batch LLM task execution",
+    "description": "Running LLM tasks via CLI, scripting AI workflows",
+    "capabilities": [
+      "Non-interactive execution",
+      "Pipeline integration",
+      "Batch processing",
+      "Scriptable AI tasks"
+    ]
+  },
+  "git": {
+    "name": "Lazygit",
+    "model": "Git TUI",
+    "role": "Visual git interface and version control",
+    "description": "Stage changes, review diffs, manage branches, commit history",
+    "capabilities": [
+      "Visual diff and staging",
+      "Branch management",
+      "Commit history visualization",
+      "Stash and merge operations"
+    ]
+  },
+  "tasks": {
+    "name": "Taskbook",
+    "model": "CLI Task Manager",
+    "role": "Task tracking and project management",
+    "description": "Managing todos, tracking progress, organizing workflows",
+    "capabilities": [
+      "Task creation and tracking",
+      "Priority management",
+      "Progress visualization",
+      "Local task storage"
+    ]
+  }
+}
