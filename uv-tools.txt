@@ -1,0 +1,12 @@
+# uv Tools
+# Generated: 2025-10-16
+#
+# Restore all tools:
+#   cat uv-tools.txt | grep -v "^#" | xargs -I {} uv tool install {}
+#
+# Or install individually:
+#   uv tool install <package-name>
+
+craft-cli        # Craft CLI tool
+posting          # API testing tool
+writekit-cli     # Writing toolkit

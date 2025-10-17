@@ -1,0 +1,20 @@
+# npm Global Packages
+# Generated: 2025-10-16
+#
+# Restore all packages:
+#   cat npm-globals.txt | grep -v "^#" | xargs npm install -g
+#
+# Or install individually:
+#   npm install -g <package-name>
+
+@github/copilot@0.0.339
+@google/gemini-cli@0.8.2
+@google/jules@0.1.33
+@openai/codex@0.46.0
+@randomlabs/slatecli@0.0.18
+@sourcegraph/amp@0.0.1760127338-g8601e4
+happy-coder@0.11.1
+vscode-langservers-extracted@4.10.0
+
+# Note: taskbook is symlinked to local dev copy, not installed globally
+# Note: corepack and npm are bundled with Node.js
