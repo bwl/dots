@@ -1,0 +1,80 @@
+# =============================================================================
+# Claude Code Zsh Configuration
+# =============================================================================
+# Ultra-minimal config for Claude Code CLI terminal sessions
+# Optimized for speed with no interactive features
+
+# Disable bracketed paste mode (Claude doesn't need it)
+unset zle_bracketed_paste
+
+# =============================================================================
+# Essential History
+# =============================================================================
+
+setopt EXTENDED_HISTORY
+setopt INC_APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=10000000
+SAVEHIST=10000000
+
+# =============================================================================
+# Essential PATH & Environment
+# =============================================================================
+
+# PATH (minimal - most already in .zshenv)
+export PATH="/opt/homebrew/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/bin:$PATH"
+
+# Essential environment variables
+export GOPATH=$HOME/go
+export FZF_DEFAULT_COMMAND='rg --files --hidden --glob "!.git"'
+
+# =============================================================================
+# Essential Aliases & Functions
+# =============================================================================
+
+alias claude="~/.claude/local/claude"
+
+# tb - Smart taskbook wrapper
+tb() {
+  if [[ -d .taskbook ]]; then
+    command tb --storage-dir ./.taskbook "$@"
+  else
+    command tb "$@"
+  fi
+}
+
+# git - Wrapper with retry logic
+git() {
+  if (( $+commands[attempt] )); then
+    command attempt git "$@"
+  else
+    command git "$@"
+  fi
+}
+
+# =============================================================================
+# Minimal Integrations
+# =============================================================================
+
+# Pyenv (essential for Python development)
+if command -v pyenv &> /dev/null; then
+  eval "$(pyenv init - --no-rehash)"
+fi
+
+# Zoxide (fast directory navigation)
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init zsh)"
+fi
+
+# =============================================================================
+# No Prompt Customization
+# =============================================================================
+# Claude Code handles its own prompt - keep it simple
+# Default zsh prompt is fine

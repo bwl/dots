@@ -37,3 +37,6 @@
 [submodule "config/tmux/tmux-menus"]
 	path = config/tmux/tmux-menus
 	url = https://github.com/jaclu/tmux-menus
+[submodule "libraries/tuios"]
+	path = libraries/tuios
+	url = https://github.com/gaurav-gosain/tuios.git
