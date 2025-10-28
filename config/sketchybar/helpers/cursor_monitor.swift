@@ -39,15 +39,26 @@ func isMenuBarMenuOpen() -> Bool {
         return false
     }
 
+    // Apps that use high window levels but aren't menu bar menus
+    // These should be excluded to prevent false positives
+    let excludedApps = [
+        "QuickTime Player",
+        "Screenshot",
+        "Screen Recording",
+        "screencaptureui"  // macOS screen capture UI
+    ]
+
     for window in windowList {
         // Check window level - menus are at level 101 or higher
         if let level = window[kCGWindowLayer as String] as? Int,
            level >= 101 {
-            // Additional check: menus typically have "Menubar" or the app name as owner
             if let owner = window[kCGWindowOwnerName as String] as? String {
-                // Menu windows are owned by the app that opened them
-                // They have level 101 (kCGPopUpMenuWindowLevel)
-                return true
+                // Skip if owner is in excluded list (recording controls, etc.)
+                if !excludedApps.contains(owner) {
+                    // Menu windows are owned by the app that opened them
+                    // They have level 101 (kCGPopUpMenuWindowLevel)
+                    return true
+                }
             }
         }
     }
