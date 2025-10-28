@@ -8,8 +8,8 @@ import AppKit
 // NOTE: These values are tuned for MacBook Air at 1710x1112 resolution
 // May need adjustment for different display resolutions/DPI settings
 // TODO: Consider dynamic resolution detection for multi-display setups
-let topEdgeThreshold: CGFloat = 1.0         // Hide bar when cursor within 1px of top (tight)
-let bottomEdgeActiveThreshold: CGFloat = 30.0  // Show bar when cursor moves below 30px from top (loose)
+let topEdgeThreshold: CGFloat = 3.0         // Hide bar when cursor within 1px of top (tight)
+let bottomEdgeActiveThreshold: CGFloat = 44.0  // Show bar when cursor moves below 30px from top (loose)
 let pollInterval: TimeInterval = 0.1
 let sketchybarPath = "/opt/homebrew/bin/sketchybar"
 
@@ -24,6 +24,33 @@ func getScreenTop() -> CGFloat {
     // In NSScreen coordinates, origin is bottom-left
     // Top of screen is frame.origin.y + frame.size.height
     return mainScreen.frame.origin.y + mainScreen.frame.size.height
+}
+
+func isMenuBarMenuOpen() -> Bool {
+    // Check if any menu bar menus are currently open
+    // Menu windows have specific window levels:
+    // - kCGPopUpMenuWindowLevel = 101 (standard menus)
+    // - kCGMainMenuWindowLevel = 24 (menu bar itself)
+
+    let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+    guard let windowList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+        return false
+    }
+
+    for window in windowList {
+        // Check window level - menus are at level 101 or higher
+        if let level = window[kCGWindowLayer as String] as? Int,
+           level >= 101 {
+            // Additional check: menus typically have "Menubar" or the app name as owner
+            if let owner = window[kCGWindowOwnerName as String] as? String {
+                // Menu windows are owned by the app that opened them
+                // They have level 101 (kCGPopUpMenuWindowLevel)
+                return true
+            }
+        }
+    }
+
+    return false
 }
 
 func triggerSketchyBarEvent(_ eventName: String) {
@@ -59,9 +86,14 @@ while true {
         }
     } else {
         // Bar is currently hidden - check if we should show it
+        // Only show if cursor is below threshold AND no menu is open
         if distanceFromTop > bottomEdgeActiveThreshold {
-            triggerSketchyBarEvent("cursor_away_from_top")
-            barIsHidden = false
+            // Check if any menu bar menus are currently open
+            if !isMenuBarMenuOpen() {
+                triggerSketchyBarEvent("cursor_away_from_top")
+                barIsHidden = false
+            }
+            // If menu is open, keep bar hidden even though cursor is below threshold
         }
     }
 
