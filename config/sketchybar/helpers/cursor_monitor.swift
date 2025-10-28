@@ -8,8 +8,10 @@ import AppKit
 // NOTE: These values are tuned for MacBook Air at 1710x1112 resolution
 // May need adjustment for different display resolutions/DPI settings
 // TODO: Consider dynamic resolution detection for multi-display setups
-let topEdgeThreshold: CGFloat = 3.0         // Hide bar when cursor within 1px of top (tight)
-let bottomEdgeActiveThreshold: CGFloat = 44.0  // Show bar when cursor moves below 30px from top (loose)
+let topEdgeThreshold: CGFloat = 3.0         // Hide bar when cursor within 3px of top (tight)
+let bottomEdgeActiveThreshold: CGFloat = 44.0  // Show bar when cursor moves below 44px from top (loose)
+let bouncerThreshold: CGFloat = 5.0         // Prevent cursor from entering top 5px (bouncer)
+let bounceTargetOffset: CGFloat = 6.0       // Where to bounce cursor back to (6px from top)
 let pollInterval: TimeInterval = 0.1
 let sketchybarPath = "/opt/homebrew/bin/sketchybar"
 
@@ -65,7 +67,46 @@ func triggerSketchyBarEvent(_ eventName: String) {
     try? process.run()
 }
 
-// Main monitoring loop with hysteresis
+func isCommandKeyPressed() -> Bool {
+    // Check if Command key is currently pressed
+    return NSEvent.modifierFlags.contains(.command)
+}
+
+func checkAccessibilityPermissions() -> Bool {
+    // Check if process has accessibility permissions (required for cursor warping)
+    // Setting prompt option to true will show the system dialog if permissions not granted
+    let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+    return AXIsProcessTrustedWithOptions(options)
+}
+
+func bounceCursor(currentPos: NSPoint, screenTop: CGFloat) {
+    // Move cursor back to bounce target position
+    // Note: NSEvent.mouseLocation uses Cocoa coordinates (bottom-left origin)
+    // but CGWarpMouseCursorPosition expects CG coordinates (top-left origin)
+
+    guard let mainScreen = NSScreen.main else { return }
+    let screenHeight = mainScreen.frame.size.height
+    let screenOriginY = mainScreen.frame.origin.y
+
+    // Calculate target in Cocoa coordinates (6px from top)
+    let targetCocoaY = screenTop - bounceTargetOffset
+
+    // Convert from Cocoa (bottom-left) to CG (top-left)
+    // CG Y = total height - Cocoa Y
+    let targetCGY = (screenOriginY + screenHeight) - targetCocoaY
+
+    let newPos = CGPoint(x: currentPos.x, y: targetCGY)
+    CGWarpMouseCursorPosition(newPos)
+}
+
+// Check accessibility permissions on startup
+let hasAccessibilityPermissions = checkAccessibilityPermissions()
+if !hasAccessibilityPermissions {
+    fputs("Warning: Accessibility permissions not granted. Cursor bouncer disabled.\n", stderr)
+    fputs("Grant permissions in System Settings > Privacy & Security > Accessibility\n", stderr)
+}
+
+// Main monitoring loop with hysteresis and cursor bouncer
 var barIsHidden = false
 
 while true {
@@ -73,10 +114,27 @@ while true {
     let screenTop = getScreenTop()
     let distanceFromTop = screenTop - cursorPos.y
 
+    // BOUNCER: Prevent cursor from entering top zone unless Command is held
+    // This runs BEFORE auto-hide logic to prevent accidental menu bar access
+    if hasAccessibilityPermissions {
+        if distanceFromTop <= bouncerThreshold {
+            // Cursor is trying to enter the top zone
+            if !isCommandKeyPressed() {
+                // Command NOT pressed - bounce cursor back
+                bounceCursor(currentPos: cursorPos, screenTop: screenTop)
+                // Skip the rest of this iteration since we just moved the cursor
+                Thread.sleep(forTimeInterval: pollInterval)
+                continue
+            }
+            // Command IS pressed - allow cursor through, auto-hide will handle it
+        }
+    }
+
+    // AUTO-HIDE LOGIC (runs if bouncer didn't trigger)
     // Hysteresis logic:
-    // - When bar visible: hide if cursor enters top 5px
-    // - When bar hidden: show if cursor moves below 40px from top
-    // This creates a dead zone (5-40px) that prevents flickering
+    // - When bar visible: hide if cursor enters top 3px
+    // - When bar hidden: show if cursor moves below 44px from top
+    // This creates a dead zone (3-44px) that prevents flickering
 
     if !barIsHidden {
         // Bar is currently visible - check if we should hide it

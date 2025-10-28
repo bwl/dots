@@ -150,13 +150,20 @@ sketchybar --add item auto_hide_trigger left \
            --subscribe auto_hide_trigger cursor_at_top cursor_away_from_top
 
 # Start cursor monitor in background
-CURSOR_MONITOR="$HOME/.config/sketchybar/helpers/cursor_monitor.swift"
-if [ -f "$CURSOR_MONITOR" ]; then
-    # Kill any existing cursor monitor processes
-    pkill -f "cursor_monitor" 2>/dev/null
+CURSOR_MONITOR_DIR="$HOME/.config/sketchybar/helpers"
+CURSOR_MONITOR_APP="$CURSOR_MONITOR_DIR/cursor_monitor.app/Contents/MacOS/cursor_monitor"
+CURSOR_MONITOR_SWIFT="$CURSOR_MONITOR_DIR/cursor_monitor.swift"
 
-    # Start new monitor in background (Swift scripts can run directly)
-    "$CURSOR_MONITOR" &>/dev/null &
+# Kill any existing cursor monitor processes
+pkill -f "cursor_monitor" 2>/dev/null
+
+# Prefer signed app bundle (proper macOS integration), fall back to Swift script
+if [ -x "$CURSOR_MONITOR_APP" ]; then
+    # Use signed app bundle (shows as "Cursor Monitor" in accessibility settings)
+    "$CURSOR_MONITOR_APP" &>/dev/null &
+elif [ -f "$CURSOR_MONITOR_SWIFT" ]; then
+    # Fall back to interpreted Swift script
+    "$CURSOR_MONITOR_SWIFT" &>/dev/null &
 fi
 
 # ============================================================================
