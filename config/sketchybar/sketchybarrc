@@ -16,7 +16,7 @@ PLUGIN_DIR="$HOME/.config/sketchybar/plugins"
 
 sketchybar --bar \
     position=top \
-    height=40 \
+    height=32 \
     blur_radius=0 \
     color=$BAR_COLOR \
     padding_left=12 \
@@ -95,7 +95,7 @@ sketchybar --add item battery right \
         icon.padding_right=4 \
         icon="$ICON_BATTERY" \
         script="$PLUGIN_DIR/battery.sh" \
-        click_script="open x-apple.systempreferences:com.apple.preference.battery" \
+        click_script="open -a AlDente" \
     --subscribe battery system_woke power_source_change
 
 # Network

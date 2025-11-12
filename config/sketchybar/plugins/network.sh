@@ -12,7 +12,8 @@ SSID=$(system_profiler SPAirPortDataType 2>/dev/null | grep -A 1 "Current Networ
 if [ -n "$SSID" ]; then
     # Connected to WiFi
     ICON=$ICON_WIFI
-    LABEL="$SSID"
+    #LABEL="$SSID"
+    LABEL="Fios"
     COLOR=$CYAN
 else
     # Check Ethernet fallback

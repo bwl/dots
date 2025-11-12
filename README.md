@@ -3,11 +3,11 @@
 Personal macOS environment with automated setup and Bitwarden secret management.
 
 **Contents:**
-- 55 Homebrew packages
+- 57 Homebrew packages (including SketchyBar)
 - 10 Mac App Store apps
 - Shell configs (zsh + Powerlevel10k)
 - Development tools (neovim, rust, bun, python/uv)
-- Application configs (ghostty, tmux, karabiner, VS Code)
+- Application configs (ghostty, tmux, karabiner, sketchybar, VS Code)
 - System preferences automation
 
 ---
@@ -39,6 +39,9 @@ exec zsh
 
 # Configure theme
 p10k configure
+
+# Start SketchyBar
+brew services start sketchybar
 ```
 
 ### Existing System
@@ -49,6 +52,18 @@ cd ~/dotfiles
 ./scripts/setup_symlinks.sh --force
 ```
 
+### SketchyBar Management
+
+```bash
+# Reload configuration after changes
+sketchybar --reload
+
+# Start/stop/restart service
+brew services start sketchybar
+brew services stop sketchybar
+brew services restart sketchybar
+```
+
 ---
 
 ## Repository Structure
@@ -56,7 +71,7 @@ cd ~/dotfiles
 ```
 dotfiles/
 ├── shell/          # .zshrc, .zshenv, .p10k.zsh
-├── config/         # Application configs (nvim, tmux, ghostty, etc.)
+├── config/         # Application configs (nvim, tmux, ghostty, sketchybar, etc.)
 ├── git/            # .gitconfig, .gitignore_global
 ├── ssh/            # SSH client config
 ├── vscode/         # VS Code settings

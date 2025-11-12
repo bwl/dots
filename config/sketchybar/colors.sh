@@ -5,7 +5,7 @@
 # Customize these values to match your preferred theme
 
 # Bar colors
-export BAR_COLOR=0xff000000         # Pure black with no transparency
+export BAR_COLOR=0x66000000         # Pure black with no transparency
 
 # Item background
 export ITEM_BG=0xff313244            # Slightly lighter than bar for contrast

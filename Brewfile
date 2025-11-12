@@ -27,6 +27,7 @@ brew "msedit"                    # Retro Microsoft terminal editor
 # CLI Utilities - Core
 # ============================================================================
 
+brew "bash"                      # Modern Bash shell (5.x) for scripts requiring Bash 4+
 brew "bat"                       # Cat clone with syntax highlighting
 brew "fd"                        # Fast alternative to find
 brew "fzf"                       # Fuzzy finder
@@ -98,6 +99,14 @@ brew "editorconfig"              # Maintain consistent coding styles
 brew "gum"                       # Glamorous shell scripts (interactive prompts)
 brew "sampler"                   # Terminal dashboard visualization
 brew "zoxide"                    # Smarter cd command (autojump)
+
+# ============================================================================
+# Menu Bar
+# ============================================================================
+
+tap "FelixKratz/formulae"
+brew "FelixKratz/formulae/sketchybar"  # Highly customizable macOS status bar
+cask "font-hack-nerd-font"       # Required font for SketchyBar icons
 
 # ============================================================================
 # Productivity & Information
