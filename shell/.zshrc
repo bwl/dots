@@ -22,7 +22,7 @@ if [[ -n "$TUIOS_WINDOW_ID" ]]; then
   # TUIOS terminal multiplexer
   source "$ZSHRC_DIR/.zshrc-tuios"
   return
-elif [[ -n "$CLAUDE_CODE_SESSION" ]]; then
+elif [[ -n "$CLAUDECODE" ]] || [[ -n "$CLAUDE_CODE_SESSION" ]]; then
   # Claude Code CLI terminal
   source "$ZSHRC_DIR/.zshrc-claude"
   return

@@ -141,7 +141,6 @@ fi
 # Uncomment if you want GNU grep instead of macOS grep
 # alias grep="ggrep"
 
-alias claude="~/.claude/local/claude"
 alias tarot="$HOME/Developer/tarot/tarot"
 
 # =============================================================================
@@ -167,8 +166,8 @@ glowf() {
   [ -n "$file" ] && glow "$file"
 }
 
-# tb - Smart taskbook wrapper (uses local .taskbook if present)
-tb() {
+# tbp - Smart taskbook wrapper (uses local .taskbook if present)
+tbp() {
   if [[ -d .taskbook ]]; then
     command tb --storage-dir ./.taskbook "$@"
   else
