@@ -18,6 +18,8 @@ fresh
 # You're now in the session! Run 'fresh' in this directory again to rejoin.
 ```
 
+**Note:** For a context-efficient single-window alternative, see the standalone `leaf` command (`~/dotfiles/scripts/leaf/README.md`).
+
 ## What You Get
 
 Each `fresh` session creates five windows in your project directory:

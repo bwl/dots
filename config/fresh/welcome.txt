@@ -1,0 +1,41 @@
+╔══════════════════════════════════════════════════════╗
+║              Fresh Development Dashboard             ║
+╚══════════════════════════════════════════════════════╝
+
+ Hybrid Zellij + Tmux Workspace
+ • Zellij: Modern UI with floating taskbook
+ • Tmux: Hidden automation layer for AI efficiency
+
+Quick Commands:
+  fresh init     - Add current directory as project tab
+  fresh list     - List all projects in dashboard
+  fresh remove   - Remove current project
+  fresh kill     - Kill current project workspace
+
+Keyboard Shortcuts:
+  Ctrl-T         - Toggle taskbook (floating pane)
+  Alt-1..9       - Quick switch to tab 1-9
+  Alt-F          - Toggle floating panes (alternative)
+  Ctrl-G, D      - Detach from dashboard
+  Ctrl-G, Q      - Quit Zellij
+
+Getting Started:
+  1. Navigate to a project directory
+  2. Run: fresh init
+  3. New tab appears with tmux workspace inside
+  4. Press Ctrl-T to see tasks anytime
+
+Architecture:
+  Each project tab contains a tmux session with pane layout:
+    ┌─────────────────┬──────┐
+    │                 │ build│
+    │   claude        ├──────┤
+    │   (main)        │ test │
+    │   70%           ├──────┤
+    │                 │server│
+    └─────────────────┴──────┘
+
+  Claude can monitor build/test/server panes efficiently
+  without filling context with output spam.
+
+Ready to code!
