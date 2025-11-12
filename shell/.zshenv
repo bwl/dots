@@ -38,11 +38,16 @@ export HOMEBREW_NO_AUTO_UPDATE=TRUE
 # FZF - Use ripgrep for file searching
 export FZF_DEFAULT_COMMAND='rg --files --hidden --glob "!.git"'
 
+export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+
 # =============================================================================
-# Secrets from Bitwarden
+# Secrets Management
 # =============================================================================
 
-# Disabled for now - uncomment when needed
+# Source local secrets file if it exists (not tracked in git)
+[[ -f "$HOME/dotfiles/shell/.zshenv-secrets" ]] && source "$HOME/dotfiles/shell/.zshenv-secrets"
+
+# Disabled Bitwarden integration for now - uncomment when needed
 # Bitwarden session management with Touch ID via macOS Keychain
 # if command -v bw &> /dev/null; then
 #   # Check if vault is already unlocked

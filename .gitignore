@@ -23,12 +23,20 @@ ssh/authorized_keys
 .env
 .env.*
 
+# Local secrets file (contains API keys, OAuth tokens)
+**/.zshenv-secrets
+
 # Bitwarden session
 .bw_session
 
 # Claude Code CLI (contains API keys and personal settings)
 .claude/
-CLAUDE.md
+
+# But DO track project-specific CLAUDE.md (this overrides above)
+!CLAUDE.md
+
+# bd issue tracker - .beads/.gitignore controls what's committed
+# (tracks .jsonl exports, ignores .db files)
 
 # ============================================================================
 # Application-Specific Secrets
@@ -92,6 +100,9 @@ config/emacs/
 
 # Retroarch (too large - 109MB)
 config/retroarch/
+
+# Tmux plugins (managed by TPM, not tracked in dotfiles)
+config/tmux/plugins/
 
 # ============================================================================
 # Backup Files
