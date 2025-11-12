@@ -1,101 +1,48 @@
 # ============================================================================
 # Ghostty Terminal Configuration
 # ============================================================================
-#
-# For tmux mouse scrolling support, add this to your ~/.tmux.conf:
-#   set -g mouse on
-#
-# Then reload tmux config with: tmux source-file ~/.tmux.conf
-# ============================================================================
+
 
 # --- Appearance ---
-font-family = PragmataProMonoLiga Nerd Font
-font-size = 18
-background = #1e1e2e
-foreground = #cdd6f4
-cursor-color = #f5e0dc
-
-# --- Colors (Catppuccin Mocha as example) ---
-palette = 0=#45475a
-palette = 1=#f38ba8
-palette = 2=#a6e3a1
-palette = 3=#f9e2af
-palette = 4=#89b4fa
-palette = 5=#f5c2e7
-palette = 6=#94e2d5
-palette = 7=#bac2de
-palette = 8=#585b70
-palette = 9=#f38ba8
-palette = 10=#a6e3a1
-palette = 11=#f9e2af
-palette = 12=#89b4fa
-palette = 13=#f5c2e7
-palette = 14=#94e2d5
-palette = 15=#a6adc8
+font-family = IosevkaTerm Nerd Font Mono
+font-size = 12
+theme = dark:Horizon,light:Horizon Bright
 
 # --- Window ---
+macos-window-shadow = true
 window-decoration = true
 macos-titlebar-style = hidden
-background-opacity = 0.95
 window-vsync = false
+window-padding-balance = true
+window-padding-x = 0
+window-padding-y = 0
+window-padding-color = extend
 
 # --- Cursor ---
 cursor-style = block
 cursor-style-blink = true
 
+
 # --- Mouse ---
 # Separate multipliers for trackpad (precision) vs mouse wheel (discrete)
 mouse-scroll-multiplier = precision:0.5,discrete:3
 
-# --- Keybinds (Mac-style) ---
+
+# --- Keybinds ---
 # Copy/paste
 keybind = cmd+c=copy_to_clipboard
 keybind = cmd+v=paste_from_clipboard
-
-# Unbind default Ghostty tab navigation (we use tmux instead)
-keybind = cmd+digit_1=unbind
-keybind = cmd+digit_2=unbind
-keybind = cmd+digit_3=unbind
-keybind = cmd+digit_4=unbind
-keybind = cmd+digit_5=unbind
-keybind = cmd+digit_6=unbind
-keybind = cmd+digit_7=unbind
-keybind = cmd+digit_8=unbind
-keybind = cmd+digit_9=unbind
-
-# tmux window navigation (sends Alt sequences to tmux)
-keybind = cmd+grave_accent=text:\x1b`
-keybind = cmd+one=text:\x1b1
-keybind = cmd+two=text:\x1b2
-keybind = cmd+three=text:\x1b3
-keybind = cmd+four=text:\x1b4
-keybind = cmd+five=text:\x1b5
-keybind = cmd+six=text:\x1b6
-keybind = cmd+seven=text:\x1b7
-keybind = cmd+eight=text:\x1b8
-keybind = cmd+nine=text:\x1b9
-
-# tmux previous/next window
-keybind = cmd+shift+left_bracket=text:\x1b[
-keybind = cmd+shift+right_bracket=text:\x1b]
-
-# tmux new window
-keybind = cmd+t=text:\x1bt
-
-# Ghostty native actions (for when not in tmux)
-# keybind = cmd+n=new_window
-# keybind = cmd+d=new_split:right
-# keybind = cmd+shift+d=new_split:down
 
 # Font size
 keybind = cmd+plus=increase_font_size:1
 keybind = cmd+minus=decrease_font_size:1
 keybind = cmd+zero=reset_font_size
 
+
 # Fullscreen toggle
 keybind = cmd+enter=toggle_fullscreen
 
-# Config reload (for shader hot-swapping)
+# Config reload
 keybind = cmd+shift+r=reload_config
 
 # --- Custom Shader ---

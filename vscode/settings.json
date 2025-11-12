@@ -1623,7 +1623,10 @@
   "github.copilot.selectedCompletionModel": "",
   "editor.inlayHints.fontSize": 12,
   "editor.inlayHints.padding": true,
-  "editor.lineNumbers": "off",
+  "editor.lineNumbers": "interval",
   "editor.inlayHints.enabled": "offUnlessPressed",
   "rust-analyzer.inlayHints.parameterHints.enable": false,
+  "amp.url": "https://ampcode.com/",
+  "amp.tab.enabled": true,
+  "editor.wordBasedSuggestions": "off",
 }

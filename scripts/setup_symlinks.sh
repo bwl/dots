@@ -136,6 +136,31 @@ if [[ -d "$HOME/.config/tmux" ]] && [[ ! -e "$HOME/.tmux" ]]; then
 fi
 
 # ============================================================================
+# Claude Code Configuration
+# ============================================================================
+if [[ -d "$DOTFILES_DIR/.claude" ]]; then
+    echo -e "${GREEN}Setting up Claude Code configuration...${NC}"
+    mkdir -p "$HOME/.claude"
+
+    # Symlink skills directory
+    if [[ -d "$DOTFILES_DIR/.claude/skills" ]]; then
+        create_symlink "$DOTFILES_DIR/.claude/skills" "$HOME/.claude/skills"
+    fi
+
+    # Symlink settings.local.json
+    if [[ -f "$DOTFILES_DIR/.claude/settings.local.json" ]]; then
+        create_symlink "$DOTFILES_DIR/.claude/settings.local.json" "$HOME/.claude/settings.local.json"
+    fi
+
+    # Symlink global CLAUDE.md
+    if [[ -f "$DOTFILES_DIR/.claude/CLAUDE.md" ]]; then
+        create_symlink "$DOTFILES_DIR/.claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+    fi
+
+    echo ""
+fi
+
+# ============================================================================
 # VS Code Settings
 # ============================================================================
 if [[ -f "$DOTFILES_DIR/vscode/settings.json" ]]; then

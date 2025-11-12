@@ -10,3 +10,5 @@
 	defaultBranch = master
 [core]
 	excludesfile = /Users/bwl/.gitignore_global
+[push]
+	autoSetupRemote = true

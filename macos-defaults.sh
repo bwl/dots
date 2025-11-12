@@ -52,6 +52,9 @@ defaults write com.apple.dock mineffect -string "genie"
 # Don't show recent apps
 defaults write com.apple.dock show-recents -bool false
 
+# Speed up Mission Control animations
+defaults write com.apple.dock expose-animation-duration -float 0.1
+
 echo "  ✓ Dock configured"
 
 # ============================================================================
@@ -150,13 +153,16 @@ echo "  ✓ Trackpad configured"
 # ============================================================================
 echo -e "${GREEN}Configuring Menu Bar...${NC}"
 
+# Auto-hide the menu bar (for use with SketchyBar)
+defaults write NSGlobalDomain _HIHideMenuBar -bool true
+
 # Show battery percentage
 defaults write com.apple.menuextra.battery ShowPercent -string "YES"
 
 # Show date and time
 defaults write com.apple.menuextra.clock DateFormat -string "EEE MMM d  h:mm a"
 
-echo "  ✓ Menu Bar configured"
+echo "  ✓ Menu Bar configured (auto-hide enabled for SketchyBar)"
 
 # ============================================================================
 # General System
@@ -165,6 +171,12 @@ echo -e "${GREEN}Configuring System...${NC}"
 
 # Disable the sound effects on boot
 # sudo nvram SystemAudioVolume=" "
+
+# Reduce Motion (disables space switching slide animation, uses fade instead)
+defaults write com.apple.universalaccess reduceMotion -bool true
+
+# Disable window animations
+defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
 
 # Expand save panel by default
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
@@ -230,11 +242,11 @@ echo ""
 echo -e "${YELLOW}Note: Some changes require a logout/restart to take full effect${NC}"
 echo ""
 echo "Changes applied:"
-echo "  • Dock: Auto-hide enabled, no magnification"
+echo "  • Dock: Auto-hide enabled, no magnification, faster animations"
 echo "  • Finder: Show hidden files, extensions, path bar"
 echo "  • Screenshots: Save to Downloads as PNG, no shadow"
 echo "  • Keyboard: Fast key repeat, disabled auto-correct"
 echo "  • Trackpad: Tap to click enabled"
-echo "  • Menu Bar: Show battery %, date/time"
-echo "  • System: Expanded panels, save to disk by default"
+echo "  • Menu Bar: Auto-hide enabled (for SketchyBar), show battery %, date/time"
+echo "  • System: Reduced motion, disabled window animations, expanded panels"
 echo ""
