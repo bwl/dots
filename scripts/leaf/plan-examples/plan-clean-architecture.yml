@@ -1,0 +1,7 @@
+title: Plan Clean Architecture Modernization
+codex_args: --mode plan --no-edit --max-iterations 4
+instructions: |
+  You are Codex collaborating with Claude. Produce a phased Clean Architecture
+  plan for this repository. Address domain boundaries, data flow, testing
+  strategy, and migration steps. End with a checklist of actions Codex can take
+  in follow-up runs (e.g., "leaf do implement-layering").

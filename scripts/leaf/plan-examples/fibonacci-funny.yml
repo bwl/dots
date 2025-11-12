@@ -1,0 +1,17 @@
+title: Write Fibonacci in a Funny Manner
+codex_args: --sandbox workspace-write --max-iterations 3
+instructions: |
+  You are Codex collaborating with Claude. Write a fibonacci function or method
+  in the most creative, humorous, or unconventional style possible while still
+  being functionally correct. Consider:
+
+  - Funny variable names
+  - Over-engineered solutions
+  - Unusual programming paradigms
+  - Witty comments
+  - Creative output formatting
+
+  Choose an appropriate language based on the project context. If unclear, use
+  Python. Include tests to verify correctness.
+
+  This is a simple debug task to verify the leaf do workflow is functioning.
