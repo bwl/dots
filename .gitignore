@@ -138,3 +138,4 @@ config/tmux/plugins/
 # Files that differ per machine (work vs personal)
 *.local
 *_local.*
+wiki/
