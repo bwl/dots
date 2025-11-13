@@ -196,6 +196,32 @@ The `fresh` command creates a tmux session with:
 
 Agent windows (0-3) include a 30% right sidebar with auto-refreshing task list.
 
+### Experiment Directory Management (Try)
+
+```bash
+# Browse all experiments
+try
+
+# Search for or create experiment directory (date-prefixed)
+try redis
+
+# Create new experiment with today's date
+try new api
+
+# Clone repository into dated directory
+try clone https://github.com/user/repo
+
+# Create git worktree for parallel development
+try worktree /path/to/main-repo experiment-name
+```
+
+Try creates date-prefixed directories (e.g., `2025-11-12-redis-cache`) in `~/src/tries` for organizing experiments. Shell integration is automatic via `.zshrc-legacy`. Manual installation:
+
+```bash
+curl -sL https://raw.githubusercontent.com/tobi/try/refs/heads/main/try.rb > ~/.local/try.rb
+chmod +x ~/.local/try.rb
+```
+
 ## Architecture
 
 ### Directory Structure
