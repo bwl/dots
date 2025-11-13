@@ -73,6 +73,13 @@ if command -v zoxide &> /dev/null; then
   eval "$(zoxide init zsh)"
 fi
 
+# Try (experiment directory manager)
+if [[ -x "$HOME/.local/try.rb" ]]; then
+  eval "$(ruby $HOME/.local/try.rb init ~/src/tries)"
+elif command -v try &> /dev/null; then
+  eval "$(try init ~/src/tries)"
+fi
+
 # =============================================================================
 # No Prompt Customization
 # =============================================================================
