@@ -4,19 +4,29 @@
 
 
 # --- Appearance ---
-font-family = IosevkaTerm Nerd Font Mono
-font-size = 12
-theme = dark:Horizon,light:Horizon Bright
+
+# font-family = IosevkaTerm Nerd Font Mono
+# font-family = IosevkaTermSlab Nerd Font Mono
+
+font-family = GoMono Nerd Font
+font-size = 16
+theme = Horizon
 
 # --- Window ---
-macos-window-shadow = true
 window-decoration = true
-macos-titlebar-style = hidden
 window-vsync = false
 window-padding-balance = true
-window-padding-x = 0
-window-padding-y = 0
+window-padding-x = 20
+window-padding-y = 20
 window-padding-color = extend
+# window-save-state = never
+
+macos-window-shadow = true
+macos-non-native-fullscreen = false
+window-colorspace = display-p3
+font-thicken = true
+macos-titlebar-style = hidden
+
 
 # --- Cursor ---
 cursor-style = block

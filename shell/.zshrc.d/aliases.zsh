@@ -6,5 +6,6 @@
 # Uncomment if you want GNU grep instead of macOS grep
 # alias grep="ggrep"
 
-alias claude="~/.claude/local/claude"
+# claude is in PATH via ~/.local/bin, no alias needed
+# alias claude="$HOME/.local/bin/claude"
 alias tarot="$HOME/Developer/tarot/tarot"
