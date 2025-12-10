@@ -1,0 +1,107 @@
+{
+  "description": "Curated DX tools and configurations surfaced in icli",
+  "items": [
+    {
+      "name": "fresh",
+      "category": "dx-script",
+      "path": "bin/fresh",
+      "description": "tuios AI workspace launcher"
+    },
+    {
+      "name": "leaf",
+      "category": "dx-script",
+      "path": "scripts/leaf/leaf.sh",
+      "description": "Lightweight tmux workspace orchestrator"
+    },
+    {
+      "name": "bd",
+      "category": "dx-tool",
+      "path": ".beads/",
+      "description": "Beads dependency-aware task tracker"
+    },
+    {
+      "name": "machine_report",
+      "category": "dx-script",
+      "path": "bin/machine_report.sh",
+      "description": "Static system info snapshot"
+    },
+    {
+      "name": "icli",
+      "category": "ideas-tool",
+      "path": "scripts/ideas/icli/",
+      "description": "Unified CLI for ideas, projects, plans"
+    },
+    {
+      "name": "ideas-tui",
+      "category": "ideas-tool",
+      "path": "scripts/ideas/ideas-tui/",
+      "description": "TUI for browsing ideas repo"
+    },
+    {
+      "name": "mq-scripts",
+      "category": "ideas-tool",
+      "path": "scripts/ideas/mq/",
+      "description": "Markdown query scripts for ideas/projects"
+    },
+    {
+      "name": "ideas-hooks",
+      "category": "ideas-tool",
+      "path": "scripts/ideas/hooks/",
+      "description": "Git hooks for ideas repo tracker"
+    },
+    {
+      "name": "zshrc.d",
+      "category": "shell-config",
+      "path": "shell/.zshrc.d/",
+      "description": "Modular shell configuration"
+    },
+    {
+      "name": "nvim",
+      "category": "app-config",
+      "path": "config/nvim/",
+      "description": "LazyVim neovim configuration"
+    },
+    {
+      "name": "tmux",
+      "category": "app-config",
+      "path": "config/tmux/",
+      "description": "Tmux configuration with plugins"
+    },
+    {
+      "name": "ghostty",
+      "category": "app-config",
+      "path": "config/ghostty/",
+      "description": "Ghostty terminal configuration"
+    },
+    {
+      "name": "Brewfile",
+      "category": "tool-list",
+      "path": "Brewfile",
+      "description": "Homebrew package manifest (55 packages)"
+    },
+    {
+      "name": "npm-globals",
+      "category": "tool-list",
+      "path": "npm-globals.txt",
+      "description": "Global npm packages (8 packages)"
+    },
+    {
+      "name": "cargo-installs",
+      "category": "tool-list",
+      "path": "cargo-installs.txt",
+      "description": "Rust cargo binaries (5 packages)"
+    },
+    {
+      "name": "uv-tools",
+      "category": "tool-list",
+      "path": "uv-tools.txt",
+      "description": "Python uv tools (3 packages)"
+    },
+    {
+      "name": "asker",
+      "category": "claude-skill",
+      "path": ".claude/skills/asker/",
+      "description": "Claude Code requirement gathering skill"
+    }
+  ]
+}

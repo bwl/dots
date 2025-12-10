@@ -140,3 +140,4 @@ config/karabiner/automatic_backups/
 *.local
 *_local.*
 wiki/
+*/target/
