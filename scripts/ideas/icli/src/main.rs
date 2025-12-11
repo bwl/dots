@@ -4,9 +4,10 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use data::{
-    analysis_file_path, check_project_dirty, has_analysis_file, load_analysis_meta,
-    load_dotfiles, load_ideas, load_plans, load_projects, save_analysis_meta, Project,
-    ProjectAnalysisMeta,
+    analysis_dir, analysis_file_path, check_project_dirty, chrono_lite, detect_untracked_projects,
+    find_ideas_repo, get_project_head_commit, get_recent_activity, has_analysis_file,
+    load_analysis_meta, load_dotfiles, load_ideas, load_plans, load_projects, save_analysis_meta,
+    Project, ProjectAnalysisMeta,
 };
 
 #[derive(Parser)]
@@ -119,6 +120,23 @@ enum Commands {
         /// Project name
         project: String,
     },
+
+    /// Create a zip bundle for NotebookLM upload
+    Snapshot {
+        /// Output path (defaults to ~/Downloads/ideas-snapshot-YYYY-MM-DD.zip)
+        #[arg(short, long)]
+        output: Option<String>,
+    },
+
+    /// Show portfolio health: new projects, stale analyses, recent activity
+    Status,
+
+    /// Remove orphaned analysis files (no matching project in inventory)
+    Prune {
+        /// Actually delete files (default is dry-run)
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -150,11 +168,14 @@ fn main() -> Result<()> {
             deep,
         } => cmd_analyze(&project, summary_only, force, deep),
         Commands::Context { project } => cmd_context(&project),
+        Commands::Snapshot { output } => cmd_snapshot(output),
+        Commands::Status => cmd_status(),
+        Commands::Prune { force } => cmd_prune(force),
     }
 }
 
 fn cmd_ideas(status: Option<String>, search: Option<String>) -> Result<()> {
-    let ideas = load_ideas()?;
+    let ideas = load_ideas(&find_ideas_repo()?)?;
 
     let filtered: Vec<_> = ideas
         .iter()
@@ -377,7 +398,7 @@ fn cmd_search(query: &str) -> Result<()> {
     let q = query.to_lowercase();
 
     // Search ideas
-    let ideas = load_ideas()?;
+    let ideas = load_ideas(&find_ideas_repo()?)?;
     let idea_matches: Vec<_> = ideas
         .iter()
         .filter(|i| {
@@ -470,7 +491,7 @@ fn cmd_search(query: &str) -> Result<()> {
 }
 
 fn cmd_stats() -> Result<()> {
-    let ideas = load_ideas()?;
+    let ideas = load_ideas(&find_ideas_repo()?)?;
     let projects = load_projects()?;
     let plans = load_plans()?;
     let dotfiles = load_dotfiles()?;
@@ -514,6 +535,127 @@ fn cmd_stats() -> Result<()> {
         "Total items".bold(),
         ideas.len() + projects.len() + plans.len() + dotfiles.len()
     );
+
+    Ok(())
+}
+
+fn cmd_status() -> Result<()> {
+    println!("{}", "=== Portfolio Status ===".bold());
+    println!();
+
+    // 1. Untracked projects
+    let untracked = detect_untracked_projects()?;
+    if !untracked.is_empty() {
+        println!("{}", "⚠ New Projects (not in inventory):".yellow());
+        for p in untracked.iter().take(5) {
+            println!(
+                "  {:<18} {} ({} commits, {})",
+                p.name.cyan(),
+                p.path.display(),
+                p.commits,
+                p.tech
+            );
+        }
+        if untracked.len() > 5 {
+            println!("  ... {} more", untracked.len() - 5);
+        }
+        println!("  Run {} to add them", "icli refresh".green());
+        println!();
+    }
+
+    // 2. Projects needing analysis (no analysis file yet)
+    let projects = load_projects()?;
+    let meta = load_analysis_meta()?;
+    let mut needs_analysis: Vec<_> = projects
+        .iter()
+        .filter(|p| !has_analysis_file(&p.name) && p.commits > 0)
+        .map(|p| (p.name.clone(), p.commits, p.category.clone()))
+        .collect();
+    needs_analysis.sort_by(|a, b| b.1.cmp(&a.1)); // Sort by commit count
+
+    if !needs_analysis.is_empty() {
+        println!("{}", format!("⚠ Needs Analysis ({} projects):", needs_analysis.len()).yellow());
+        for (name, commits, category) in needs_analysis.iter().take(5) {
+            println!(
+                "  {:<18} {} commits  [{}]",
+                name.cyan(),
+                commits,
+                category
+            );
+        }
+        if needs_analysis.len() > 5 {
+            println!("  ... {} more (run {})", needs_analysis.len() - 5, "icli dirty".green());
+        }
+        println!();
+    }
+
+    // 3. Stale analyses (have analysis but outdated)
+    let mut stale: Vec<_> = projects
+        .iter()
+        .filter_map(|p| {
+            if !has_analysis_file(&p.name) {
+                return None;
+            }
+            let dirty = check_project_dirty(p, &meta);
+            let commits = dirty.commits_since.unwrap_or(0);
+            if commits > 0 {
+                Some((p.name.clone(), commits))
+            } else {
+                None
+            }
+        })
+        .collect();
+    stale.sort_by(|a, b| b.1.cmp(&a.1));
+
+    if !stale.is_empty() {
+        println!("{}", format!("⚠ Stale Analyses ({} total):", stale.len()).yellow());
+        for (name, commits) in stale.iter().take(3) {
+            println!(
+                "  {:<18} {} commits since analysis",
+                name.cyan(),
+                commits.to_string().red()
+            );
+        }
+        if stale.len() > 3 {
+            println!("  ... run {} for full list", "icli dirty".green());
+        }
+        println!();
+    }
+
+    // 3. Recent activity
+    let recent = get_recent_activity(7)?;
+    if !recent.is_empty() {
+        println!("{}", "Recent Activity (last 7 days):".blue());
+        for p in recent.iter().take(5) {
+            println!(
+                "  {:<18} {}  {}",
+                p.name.cyan(),
+                p.last_commit_date,
+                truncate(&p.last_commit_msg, 40)
+            );
+        }
+        if recent.len() > 5 {
+            println!("  ... {} more active projects", recent.len() - 5);
+        }
+        println!();
+    }
+
+    // 4. Quick stats
+    let ideas = load_ideas(&find_ideas_repo()?)?;
+    let analyzed_count = meta.projects.len();
+    println!(
+        "{}: {} projects │ {} analyzed │ {} ideas",
+        "Quick Stats".bold(),
+        projects.len(),
+        analyzed_count,
+        ideas.len()
+    );
+
+    // Overall health indicator
+    let issues = untracked.len() + needs_analysis.len() + stale.len();
+    if issues == 0 {
+        println!("\n{}", "✓ Portfolio is healthy!".green());
+    }
 
     Ok(())
 }
@@ -591,74 +733,82 @@ fn truncate(s: &str, max: usize) -> String {
     }
 }
 
-fn cmd_dirty(tracked_only: bool, stale_only: bool) -> Result<()> {
+fn cmd_dirty(_tracked_only: bool, _stale_only: bool) -> Result<()> {
     let projects = load_projects()?;
     let meta = load_analysis_meta()?;
 
-    let mut analyzed_dirty = Vec::new();
-    let mut never_analyzed = Vec::new();
+    // Collect stale (has analysis but outdated) and never analyzed
+    let mut stale: Vec<(String, u32, String)> = Vec::new();
+    let mut never: Vec<(String, u32, String)> = Vec::new();
 
     for project in &projects {
-        let dirty = check_project_dirty(project, &meta);
         let has_file = has_analysis_file(&project.name);
 
-        if dirty.analyzed_at.is_some() && has_file {
-            // Already analyzed - check if stale
+        if has_file {
+            let dirty = check_project_dirty(project, &meta);
             let commits = dirty.commits_since.unwrap_or(0);
-            if commits > 0 || !stale_only {
-                analyzed_dirty.push(dirty);
-            }
-        } else if !tracked_only {
-            never_analyzed.push(dirty);
-        }
-    }
-
-    println!("{}", "=== Dirty Projects ===".bold());
-    println!();
-
-    if !analyzed_dirty.is_empty() {
-        println!("{}", "Analyzed (need refresh):".yellow());
-        for d in &analyzed_dirty {
-            let commits = d.commits_since.unwrap_or(0);
-            let last = d.analyzed_at.as_deref().unwrap_or("-");
             if commits > 0 {
-                println!(
-                    "  {:<22} last: {}  {} since",
-                    d.name,
-                    last,
-                    format!("{} commits", commits).red()
-                );
-            } else {
-                println!("  {:<22} last: {}  (up to date)", d.name, last);
+                stale.push((project.name.clone(), commits, project.category.clone()));
             }
+        } else if project.commits > 0 {
+            never.push((project.name.clone(), project.commits, project.category.clone()));
         }
     }
 
-    if !never_analyzed.is_empty() {
-        println!();
-        println!("{}", "Never analyzed:".cyan());
-        // Group into one line if many
-        if never_analyzed.len() > 10 {
-            let names: Vec<_> = never_analyzed.iter().take(10).map(|d| d.name.as_str()).collect();
-            println!(
-                "  {}, ... ({} more)",
-                names.join(", "),
-                never_analyzed.len() - 10
-            );
-        } else {
-            for d in &never_analyzed {
-                println!("  {}", d.name);
-            }
-        }
-    }
+    // Sort by commits descending
+    stale.sort_by(|a, b| b.1.cmp(&a.1));
+    never.sort_by(|a, b| b.1.cmp(&a.1));
 
-    let total_dirty = analyzed_dirty.iter().filter(|d| d.commits_since.unwrap_or(0) > 0).count();
+    println!("{}", "=== Analysis Status ===".bold());
     println!();
+
+    // Stale analyses
+    if !stale.is_empty() {
+        println!("{}", format!("Stale ({} projects):", stale.len()).yellow());
+        for (name, commits, category) in &stale {
+            println!(
+                "  {:<22} {} commits since  [{}]",
+                name.cyan(),
+                commits.to_string().red(),
+                category
+            );
+        }
+        println!();
+    }
+
+    // Never analyzed
+    if !never.is_empty() {
+        println!("{}", format!("Never Analyzed ({} projects):", never.len()).cyan());
+        for (name, commits, category) in never.iter().take(10) {
+            println!(
+                "  {:<22} {} commits  [{}]",
+                name,
+                commits,
+                category
+            );
+        }
+        if never.len() > 10 {
+            println!("  ... {} more", never.len() - 10);
+        }
+        println!();
+    }
+
+    // Summary
+    let analyzed_count = meta.projects.len();
+    let up_to_date = analyzed_count - stale.len();
+
     println!(
-        "{} stale, {} never analyzed",
-        total_dirty.to_string().bold(),
-        never_analyzed.len().to_string().bold()
+        "{}: {} analyzed ({} up to date, {} stale), {} never analyzed",
+        "Summary".bold(),
+        analyzed_count,
+        up_to_date.to_string().green(),
+        stale.len().to_string().yellow(),
+        never.len().to_string().cyan()
     );
+
+    if stale.is_empty() && never.is_empty() {
+        println!("\n{}", "✓ All projects are analyzed and up to date!".green());
+    }
 
     Ok(())
 }
@@ -724,7 +874,7 @@ fn cmd_analyze(project_name: &str, summary_only: bool, force: bool, deep: bool) 
     if status.success() {
         // Update meta
         let mut meta = meta;
-        let current_commit = data::get_project_head_commit(&project.path).unwrap_or_default();
+        let current_commit = get_project_head_commit(&project.path).unwrap_or_default();
         let now = chrono_now();
 
         meta.projects.insert(
@@ -845,41 +995,247 @@ fn chrono_now() -> String {
     format!("{}T{:02}:{:02}:{:02}", date, hours, minutes, seconds)
 }
 
-fn chrono_lite(unix_secs: i64) -> String {
-    // Convert unix timestamp to YYYY-MM-DD
-    let days_since_epoch = unix_secs / 86400;
-    let mut year = 1970;
-    let mut remaining_days = days_since_epoch;
 
-    loop {
-        let days_in_year = if is_leap_year(year) { 366 } else { 365 };
-        if remaining_days < days_in_year {
-            break;
-        }
-        remaining_days -= days_in_year;
-        year += 1;
-    }
+fn cmd_snapshot(output: Option<String>) -> Result<()> {
+    use std::io::Write;
+    use zip::write::SimpleFileOptions;
 
-    let days_in_months: [i64; 12] = if is_leap_year(year) {
-        [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    } else {
-        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    let home = dirs::home_dir().expect("No home directory");
+    let ideas_root = home.join("Developer/ideas");
+
+    // Determine output path
+    let today = chrono_lite(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64,
+    );
+    let default_name = format!("ideas-snapshot-{}.zip", today);
+    let output_path = match output {
+        Some(p) => std::path::PathBuf::from(p),
+        None => home.join("Downloads").join(&default_name),
     };
 
-    let mut month = 1;
-    for days in days_in_months.iter() {
-        if remaining_days < *days {
-            break;
+    println!("{}", "Creating NotebookLM snapshot...".cyan());
+
+    // Create zip
+    let file = std::fs::File::create(&output_path)?;
+    let mut zip = zip::ZipWriter::new(file);
+    let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+
+    // 1. Analysis files (already markdown)
+    let analysis_dir = ideas_root.join("_data/analysis");
+    let mut analysis_count = 0;
+    if analysis_dir.exists() {
+        for entry in std::fs::read_dir(&analysis_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.extension().map_or(false, |e| e == "md") {
+                let name = format!("analysis/{}", path.file_name().unwrap().to_string_lossy());
+                let content = std::fs::read(&path)?;
+                zip.start_file(&name, options)?;
+                zip.write_all(&content)?;
+                analysis_count += 1;
+            }
         }
-        remaining_days -= days;
-        month += 1;
     }
 
-    let day = remaining_days + 1;
+    // 2. Project inventory (JSON → Markdown)
+    let inventory_path = ideas_root.join("_data/project-inventory.json");
+    if inventory_path.exists() {
+        let md = inventory_to_markdown(&inventory_path)?;
+        zip.start_file("project-inventory.md", options)?;
+        zip.write_all(md.as_bytes())?;
+    }
 
-    format!("{:04}-{:02}-{:02}", year, month, day)
+    // 3. Tracker (CSV → Markdown)
+    let tracker_path = ideas_root.join("_tracker.csv");
+    if tracker_path.exists() {
+        let md = tracker_to_markdown(&tracker_path)?;
+        zip.start_file("ideas-tracker.md", options)?;
+        zip.write_all(md.as_bytes())?;
+    }
+
+    // 4. Repo docs (already markdown)
+    let readme_path = ideas_root.join("README.md");
+    if readme_path.exists() {
+        let content = std::fs::read(&readme_path)?;
+        zip.start_file("README.md", options)?;
+        zip.write_all(&content)?;
+    }
+
+    let claude_md_path = ideas_root.join("CLAUDE.md");
+    if claude_md_path.exists() {
+        let content = std::fs::read(&claude_md_path)?;
+        zip.start_file("CLAUDE.md", options)?;
+        zip.write_all(&content)?;
+    }
+
+    zip.finish()?;
+
+    // Print summary
+    let zip_size = std::fs::metadata(&output_path)?.len();
+    println!("  {} analysis files", analysis_count.to_string().bold());
+    println!("  {} project inventory (as markdown)", "1".bold());
+    println!("  {} tracker (as markdown)", "1".bold());
+    println!("  {} repo docs", "2".bold());
+    println!();
+    println!(
+        "{}: {} ({} compressed)",
+        "Snapshot".green(),
+        output_path.display(),
+        format_size(zip_size)
+    );
+
+    Ok(())
 }
 
-fn is_leap_year(year: i64) -> bool {
-    (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+/// Convert project-inventory.json to markdown
+fn inventory_to_markdown(path: &std::path::Path) -> Result<String> {
+    #[derive(serde::Deserialize)]
+    struct Inventory {
+        projects: Vec<Project>,
+    }
+
+    let content = std::fs::read_to_string(path)?;
+    let inv: Inventory = serde_json::from_str(&content)?;
+
+    let mut md = String::from("# Project Inventory\n\n");
+    md.push_str(&format!("Total projects: {}\n\n", inv.projects.len()));
+
+    // Group by category
+    let mut by_cat: std::collections::HashMap<&str, Vec<&Project>> = std::collections::HashMap::new();
+    for p in &inv.projects {
+        by_cat.entry(&p.category).or_default().push(p);
+    }
+
+    let mut cats: Vec<_> = by_cat.keys().collect();
+    cats.sort();
+
+    for cat in cats {
+        let projects = &by_cat[cat];
+        md.push_str(&format!("## {} ({} projects)\n\n", cat, projects.len()));
+
+        for p in projects {
+            md.push_str(&format!("### {}\n\n", p.name));
+            md.push_str(&format!("- **Path**: {}\n", p.path));
+            md.push_str(&format!("- **Tech**: {}\n", p.tech));
+            md.push_str(&format!("- **Last commit**: {}\n", p.last_commit));
+            md.push_str(&format!("- **Description**: {}\n\n", p.description));
+        }
+    }
+
+    Ok(md)
+}
+
+/// Convert _tracker.csv to markdown
+fn tracker_to_markdown(path: &std::path::Path) -> Result<String> {
+    let mut md = String::from("# Ideas Tracker\n\n");
+    md.push_str("| Folder | Tags | Description | Created | Modified | Sessions |\n");
+    md.push_str("|--------|------|-------------|---------|----------|----------|\n");
+
+    let mut reader = csv::Reader::from_path(path)?;
+    for result in reader.records() {
+        let record = result?;
+        let folder = record.get(0).unwrap_or("");
+        let tags = record.get(1).unwrap_or("").trim_matches('"');
+        let description = record.get(2).unwrap_or("").trim_matches('"');
+        let created = record.get(3).unwrap_or("");
+        let modified = record.get(4).unwrap_or("");
+        let sessions = record.get(5).unwrap_or("0");
+
+        if !folder.is_empty() {
+            md.push_str(&format!(
+                "| {} | {} | {} | {} | {} | {} |\n",
+                folder, tags, description, created, modified, sessions
+            ));
+        }
+    }
+
+    Ok(md)
+}
+
+fn format_size(bytes: u64) -> String {
+    if bytes < 1024 {
+        format!("{} B", bytes)
+    } else if bytes < 1024 * 1024 {
+        format!("{:.1} KB", bytes as f64 / 1024.0)
+    } else {
+        format!("{:.1} MB", bytes as f64 / (1024.0 * 1024.0))
+    }
+}
+
+fn cmd_prune(force: bool) -> Result<()> {
+
+    let projects = load_projects()?;
+    let project_names: std::collections::HashSet<_> = projects.iter().map(|p| p.name.as_str()).collect();
+
+    let analysis_path = analysis_dir()?;
+    let mut orphans: Vec<(String, std::path::PathBuf)> = Vec::new();
+
+    // Find analysis files with no matching project
+    if analysis_path.exists() {
+        for entry in std::fs::read_dir(&analysis_path)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            // Skip non-md files and _meta.json
+            if path.extension().map_or(true, |e| e != "md") {
+                continue;
+            }
+
+            let name = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("");
+
+            if !project_names.contains(name) {
+                orphans.push((name.to_string(), path));
+            }
+        }
+    }
+
+    if orphans.is_empty() {
+        println!("{}", "✓ No orphaned analysis files found".green());
+        return Ok(());
+    }
+
+    orphans.sort_by(|a, b| a.0.cmp(&b.0));
+
+    println!(
+        "{}",
+        format!("Found {} orphaned analysis files:", orphans.len()).yellow()
+    );
+    println!();
+
+    for (name, path) in &orphans {
+        println!("  {} → {}", name.red(), path.display());
+    }
+    println!();
+
+    if force {
+        // Delete orphaned files and remove from meta
+        let mut meta = load_analysis_meta()?;
+
+        for (name, path) in &orphans {
+            std::fs::remove_file(path)?;
+            meta.projects.remove(name);
+            println!("  {} {}", "Deleted:".red(), name);
+        }
+
+        save_analysis_meta(&meta)?;
+        println!();
+        println!(
+            "{}: Removed {} orphaned files",
+            "Done".green(),
+            orphans.len()
+        );
+    } else {
+        println!(
+            "Run {} to delete these files",
+            "icli prune --force".cyan()
+        );
+    }
+
+    Ok(())
 }

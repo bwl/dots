@@ -8,10 +8,9 @@ IDEAS_REPO="$HOME/Developer/ideas"
 OUTPUT="$IDEAS_REPO/_data/project-inventory.json"
 
 # Directories to scan
+# Note: ideas folders are tracked separately via _tracker.csv, not here
 SOURCES=(
     "$HOME/Developer:Developer"
-    "$HOME/src/tries:tries"
-    "$HOME/Developer/ideas:ideas"
 )
 
 # Category patterns: "regex:category"
@@ -230,5 +229,5 @@ for src in "${!source_counts[@]}"; do
 done
 sed -i '' "s/\"sources\": {}/\"sources\": {$sources_json}/" "$OUTPUT"
 
-total=$(( ${source_counts[Developer]:-0} + ${source_counts[tries]:-0} + ${source_counts[ideas]:-0} ))
+total=${source_counts[Developer]:-0}
 echo "Done. $total projects saved to $OUTPUT" >&2
