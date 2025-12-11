@@ -9,7 +9,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use data::load_ideas;
+use data::{load_ideas, load_projects};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use std::path::PathBuf;
@@ -18,8 +18,9 @@ fn main() -> Result<()> {
     // Find repo root (look for _tracker.csv)
     let repo_root = find_repo_root()?;
 
-    // Load ideas
+    // Load ideas and projects
     let ideas = load_ideas(&repo_root)?;
+    let projects = load_projects().unwrap_or_default();
 
     // Setup terminal
     enable_raw_mode()?;
@@ -29,7 +30,7 @@ fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     // Create app
-    let mut app = App::new(ideas, repo_root);
+    let mut app = App::new(ideas, projects, repo_root);
 
     // Run app
     let res = run_app(&mut terminal, &mut app);

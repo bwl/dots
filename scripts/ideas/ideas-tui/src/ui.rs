@@ -1,9 +1,10 @@
-use crate::app::{App, View};
+use crate::app::{App, Tab, View};
+use crate::data::has_analysis_file;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Tabs, Wrap},
     Frame,
 };
 
@@ -12,6 +13,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         View::List => draw_list_view(frame, app),
         View::Detail => draw_detail_view(frame, app),
         View::MarkdownReader => draw_markdown_reader(frame, app),
+        View::AnalysisPreview => draw_analysis_preview(frame, app),
     }
 }
 
@@ -19,40 +21,135 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3), // Header
+            Constraint::Length(3), // Tabs + header
             Constraint::Min(5),    // List
             Constraint::Length(3), // Status bar
         ])
         .split(frame.area());
 
-    // Header
-    let header = if app.search_mode {
-        Paragraph::new(Line::from(vec![
+    // Tabs header
+    let tab_titles = vec![
+        format!(" Ideas ({}) ", app.ideas.len()),
+        format!(" Projects ({}) ", app.projects.len()),
+    ];
+    let selected_tab = match app.tab {
+        Tab::Ideas => 0,
+        Tab::Projects => 1,
+    };
+
+    let header_text = if app.search_mode {
+        Line::from(vec![
             Span::styled(" Search: ", Style::default().fg(Color::Yellow)),
             Span::raw(&app.search_query),
             Span::styled("_", Style::default().fg(Color::Yellow).add_modifier(Modifier::SLOW_BLINK)),
-        ]))
-        .block(Block::default().borders(Borders::ALL).title(" Ideas Dashboard "))
+        ])
     } else {
-        Paragraph::new(Line::from(vec![
-            Span::styled(" [↑↓/jk] ", Style::default().fg(Color::Cyan)),
-            Span::raw("Navigate  "),
-            Span::styled("[Enter] ", Style::default().fg(Color::Cyan)),
-            Span::raw("View  "),
-            Span::styled("[s] ", Style::default().fg(Color::Cyan)),
-            Span::raw(format!("Sort:{}  ", app.sort_by.label())),
-            Span::styled("[f] ", Style::default().fg(Color::Cyan)),
-            Span::raw(format!("Filter:{}  ", app.filter.label())),
-            Span::styled("[/] ", Style::default().fg(Color::Cyan)),
-            Span::raw("Search  "),
-            Span::styled("[q] ", Style::default().fg(Color::Cyan)),
-            Span::raw("Quit"),
-        ]))
-        .block(Block::default().borders(Borders::ALL).title(" Ideas Dashboard "))
+        match app.tab {
+            Tab::Ideas => Line::from(vec![
+                Span::styled("[Tab] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Switch  "),
+                Span::styled("[s] ", Style::default().fg(Color::Cyan)),
+                Span::raw(format!("Sort:{}  ", app.sort_by.label())),
+                Span::styled("[f] ", Style::default().fg(Color::Cyan)),
+                Span::raw(format!("Filter:{}  ", app.filter.label())),
+                Span::styled("[/] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Search"),
+            ]),
+            Tab::Projects => Line::from(vec![
+                Span::styled("[Tab] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Switch  "),
+                Span::styled("[s] ", Style::default().fg(Color::Cyan)),
+                Span::raw(format!("Sort:{}  ", app.project_sort_by.label())),
+                Span::styled("[Enter] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Analysis  "),
+                Span::styled("[/] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Search"),
+            ]),
+        }
     };
-    frame.render_widget(header, chunks[0]);
 
-    // List
+    let tabs = Tabs::new(tab_titles)
+        .block(Block::default().borders(Borders::ALL))
+        .select(selected_tab)
+        .style(Style::default().fg(Color::DarkGray))
+        .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+
+    // Split header area for tabs and controls
+    let header_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(30), Constraint::Min(20)])
+        .split(chunks[0]);
+
+    frame.render_widget(tabs, header_chunks[0]);
+    frame.render_widget(
+        Paragraph::new(header_text).block(Block::default().borders(Borders::ALL)),
+        header_chunks[1],
+    );
+
+    // List - different content based on tab
+    match app.tab {
+        Tab::Ideas => draw_ideas_list(frame, app, chunks[1]),
+        Tab::Projects => draw_projects_list(frame, app, chunks[1]),
+    }
+
+    // Status bar
+    let status_bar = if app.search_mode {
+        let matches = match app.tab {
+            Tab::Ideas => app.filtered_indices.len(),
+            Tab::Projects => app.project_filtered_indices.len(),
+        };
+        Paragraph::new(Line::from(vec![
+            Span::styled(" [Esc] ", Style::default().fg(Color::Cyan)),
+            Span::raw("Cancel  "),
+            Span::styled("[Enter] ", Style::default().fg(Color::Cyan)),
+            Span::raw("Accept  "),
+            Span::styled(
+                format!("{} matches", matches),
+                Style::default().fg(Color::Yellow),
+            ),
+        ]))
+        .block(Block::default().borders(Borders::ALL))
+    } else {
+        match app.tab {
+            Tab::Ideas => {
+                let (total, active, dormant, questions) = app.stats();
+                Paragraph::new(Line::from(vec![
+                    Span::raw(format!(" {} ideas", total)),
+                    Span::raw(" │ "),
+                    Span::styled(format!("{} active", active), Style::default().fg(Color::Green)),
+                    Span::raw(" │ "),
+                    Span::styled(format!("{} dormant", dormant), Style::default().fg(Color::Yellow)),
+                    Span::raw(" │ "),
+                    Span::styled(
+                        format!("{} open questions", questions),
+                        Style::default().fg(Color::Cyan),
+                    ),
+                ]))
+                .block(Block::default().borders(Borders::ALL))
+            }
+            Tab::Projects => {
+                let (total, analyzed) = app.project_stats();
+                Paragraph::new(Line::from(vec![
+                    Span::raw(format!(" {} projects", total)),
+                    Span::raw(" │ "),
+                    Span::styled(
+                        format!("{} analyzed", analyzed),
+                        Style::default().fg(Color::Green),
+                    ),
+                    Span::raw(" │ "),
+                    Span::styled(
+                        format!("{} pending", total - analyzed),
+                        Style::default().fg(Color::DarkGray),
+                    ),
+                ]))
+                .block(Block::default().borders(Borders::ALL))
+            }
+        }
+    };
+    frame.render_widget(status_bar, chunks[2]);
+}
+
+fn draw_ideas_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::Rect) {
     let ideas = app.filtered_ideas();
     let items: Vec<ListItem> = ideas
         .iter()
@@ -109,38 +206,61 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
         )
         .highlight_symbol("▶ ");
 
-    frame.render_stateful_widget(list, chunks[1], &mut app.list_state);
+    frame.render_stateful_widget(list, area, &mut app.list_state);
+}
 
-    // Status bar
-    let status_bar = if app.search_mode {
-        Paragraph::new(Line::from(vec![
-            Span::styled(" [Esc] ", Style::default().fg(Color::Cyan)),
-            Span::raw("Cancel  "),
-            Span::styled("[Enter] ", Style::default().fg(Color::Cyan)),
-            Span::raw("Accept  "),
-            Span::styled(
-                format!("{} matches", app.filtered_indices.len()),
-                Style::default().fg(Color::Yellow),
-            ),
-        ]))
+fn draw_projects_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::Rect) {
+    let projects = app.filtered_projects();
+    let items: Vec<ListItem> = projects
+        .iter()
+        .map(|p| {
+            let analyzed = has_analysis_file(&p.name);
+            let analysis_indicator = if analyzed {
+                Span::styled("[A]", Style::default().fg(Color::Green))
+            } else {
+                Span::styled("[ ]", Style::default().fg(Color::DarkGray))
+            };
+
+            let cat_color = match p.category.as_str() {
+                "roguelike" => Color::Red,
+                "writing" => Color::Magenta,
+                "knowledge" => Color::Blue,
+                "simulation" => Color::Green,
+                "tui" | "cli" => Color::Cyan,
+                _ => Color::White,
+            };
+
+            let line = Line::from(vec![
+                analysis_indicator,
+                Span::raw(" "),
+                Span::styled(
+                    format!("{:<18}", truncate(&p.name, 17)),
+                    Style::default().fg(Color::White),
+                ),
+                Span::styled(
+                    format!("{:<12}", truncate(&p.category, 11)),
+                    Style::default().fg(cat_color),
+                ),
+                Span::styled(
+                    format!("{:<12}", &p.last_commit),
+                    Style::default().fg(Color::DarkGray),
+                ),
+                Span::raw(truncate(&p.description, 30)),
+            ]);
+            ListItem::new(line)
+        })
+        .collect();
+
+    let list = List::new(items)
         .block(Block::default().borders(Borders::ALL))
-    } else {
-        let (total, active, dormant, questions) = app.stats();
-        Paragraph::new(Line::from(vec![
-            Span::raw(format!(" {} ideas", total)),
-            Span::raw(" │ "),
-            Span::styled(format!("{} active", active), Style::default().fg(Color::Green)),
-            Span::raw(" │ "),
-            Span::styled(format!("{} dormant", dormant), Style::default().fg(Color::Yellow)),
-            Span::raw(" │ "),
-            Span::styled(
-                format!("{} open questions", questions),
-                Style::default().fg(Color::Cyan),
-            ),
-        ]))
-        .block(Block::default().borders(Borders::ALL))
-    };
-    frame.render_widget(status_bar, chunks[2]);
+        .highlight_style(
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+        )
+        .highlight_symbol("▶ ");
+
+    frame.render_stateful_widget(list, area, &mut app.project_list_state);
 }
 
 fn draw_detail_view(frame: &mut Frame, app: &mut App) {
@@ -310,6 +430,51 @@ fn draw_markdown_reader(frame: &mut Frame, app: &App) {
         Span::raw("Back  "),
         Span::styled(
             format!("Line {}/{}", app.md_scroll + 1, app.md_total_lines),
+            Style::default().fg(Color::DarkGray),
+        ),
+    ]))
+    .block(Block::default().borders(Borders::ALL));
+    frame.render_widget(footer, chunks[1]);
+}
+
+fn draw_analysis_preview(frame: &mut Frame, app: &App) {
+    let project_name = app
+        .selected_project()
+        .map(|p| p.name.clone())
+        .unwrap_or_else(|| "Unknown".to_string());
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(5),    // Content
+            Constraint::Length(3), // Footer
+        ])
+        .split(frame.area());
+
+    // Render analysis content as markdown
+    let text = tui_markdown::from_str(&app.analysis_content);
+    let paragraph = Paragraph::new(text)
+        .scroll((app.analysis_scroll, 0))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(" Analysis: {} ", project_name)),
+        )
+        .wrap(Wrap { trim: false });
+    frame.render_widget(paragraph, chunks[0]);
+
+    // Footer
+    let footer = Paragraph::new(Line::from(vec![
+        Span::styled(" [↑↓/jk] ", Style::default().fg(Color::Cyan)),
+        Span::raw("Scroll  "),
+        Span::styled("[d/u] ", Style::default().fg(Color::Cyan)),
+        Span::raw("Page  "),
+        Span::styled("[o] ", Style::default().fg(Color::Cyan)),
+        Span::raw("Open Folder  "),
+        Span::styled("[Esc] ", Style::default().fg(Color::Cyan)),
+        Span::raw("Back  "),
+        Span::styled(
+            format!("Line {}/{}", app.analysis_scroll + 1, app.analysis_total_lines),
             Style::default().fg(Color::DarkGray),
         ),
     ]))

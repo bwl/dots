@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use serde::Deserialize;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -190,4 +191,127 @@ pub fn find_markdown_files(idea_path: &Path) -> Vec<PathBuf> {
         }
     });
     files
+}
+
+// ============ Projects ============
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Project {
+    pub name: String,
+    pub path: String,
+    pub source: String,
+    pub category: String,
+    pub tech: String,
+    pub last_commit: String,
+    pub commits: u32,
+    pub description: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ProjectInventory {
+    projects: Vec<Project>,
+}
+
+pub fn load_projects() -> Result<Vec<Project>> {
+    let home = dirs::home_dir().context("No home directory")?;
+    let inventory_path = home.join("Developer/ideas/_data/project-inventory.json");
+
+    if !inventory_path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let content = std::fs::read_to_string(&inventory_path)?;
+    let inventory: ProjectInventory = serde_json::from_str(&content)?;
+
+    Ok(inventory.projects)
+}
+
+pub fn analysis_dir() -> Result<PathBuf> {
+    let home = dirs::home_dir().context("No home directory")?;
+    Ok(home.join("Developer/ideas/_data/analysis"))
+}
+
+pub fn has_analysis_file(project_name: &str) -> bool {
+    if let Ok(dir) = analysis_dir() {
+        dir.join(format!("{}.md", project_name)).exists()
+    } else {
+        false
+    }
+}
+
+pub fn load_analysis_summary(project_name: &str) -> Option<String> {
+    let dir = analysis_dir().ok()?;
+    let path = dir.join(format!("{}.md", project_name));
+
+    if !path.exists() {
+        return None;
+    }
+
+    let content = std::fs::read_to_string(&path).ok()?;
+
+    // Extract summary section (up to "---" or "## Deep Dive")
+    let mut in_summary = false;
+    let mut output = String::new();
+
+    for line in content.lines() {
+        if line.starts_with("# ") || line.starts_with("> ") {
+            in_summary = true;
+        }
+        if line == "---" || line.starts_with("## Deep Dive") {
+            break;
+        }
+        if in_summary {
+            output.push_str(line);
+            output.push('\n');
+        }
+    }
+
+    if output.is_empty() {
+        None
+    } else {
+        Some(output)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectSortBy {
+    Name,
+    Category,
+    LastCommit,
+    Analyzed,
+}
+
+impl ProjectSortBy {
+    pub fn next(self) -> Self {
+        match self {
+            ProjectSortBy::Name => ProjectSortBy::Category,
+            ProjectSortBy::Category => ProjectSortBy::LastCommit,
+            ProjectSortBy::LastCommit => ProjectSortBy::Analyzed,
+            ProjectSortBy::Analyzed => ProjectSortBy::Name,
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            ProjectSortBy::Name => "name",
+            ProjectSortBy::Category => "category",
+            ProjectSortBy::LastCommit => "last commit",
+            ProjectSortBy::Analyzed => "analyzed",
+        }
+    }
+}
+
+pub fn sort_projects(projects: &mut [Project], sort_by: ProjectSortBy) {
+    match sort_by {
+        ProjectSortBy::Name => projects.sort_by(|a, b| a.name.cmp(&b.name)),
+        ProjectSortBy::Category => projects.sort_by(|a, b| a.category.cmp(&b.category)),
+        ProjectSortBy::LastCommit => projects.sort_by(|a, b| b.last_commit.cmp(&a.last_commit)),
+        ProjectSortBy::Analyzed => {
+            projects.sort_by(|a, b| {
+                let a_has = has_analysis_file(&a.name);
+                let b_has = has_analysis_file(&b.name);
+                b_has.cmp(&a_has)
+            })
+        }
+    }
 }

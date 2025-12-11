@@ -1,14 +1,33 @@
-use crate::data::{find_markdown_files, sort_ideas, Idea, SortBy};
+use crate::data::{
+    find_markdown_files, has_analysis_file, load_analysis_summary, sort_ideas, sort_projects,
+    Idea, Project, ProjectSortBy, SortBy,
+};
 use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::widgets::ListState;
 use std::path::PathBuf;
 use std::process::Command;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tab {
+    Ideas,
+    Projects,
+}
+
+impl Tab {
+    pub fn next(self) -> Self {
+        match self {
+            Tab::Ideas => Tab::Projects,
+            Tab::Projects => Tab::Ideas,
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum View {
     List,
     Detail,
     MarkdownReader,
+    AnalysisPreview,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,6 +68,9 @@ impl StatusFilter {
 }
 
 pub struct App {
+    // Tab state
+    pub tab: Tab,
+    // Ideas state
     pub ideas: Vec<Idea>,
     pub filtered_indices: Vec<usize>,
     pub list_state: ListState,
@@ -57,6 +79,15 @@ pub struct App {
     pub filter: StatusFilter,
     pub repo_root: PathBuf,
     pub should_quit: bool,
+    // Projects state
+    pub projects: Vec<Project>,
+    pub project_filtered_indices: Vec<usize>,
+    pub project_list_state: ListState,
+    pub project_sort_by: ProjectSortBy,
+    pub project_category_filter: Option<String>,
+    pub analysis_content: String,
+    pub analysis_scroll: u16,
+    pub analysis_total_lines: u16,
     // Markdown viewer state
     pub md_files: Vec<PathBuf>,
     pub md_list_state: ListState,
@@ -69,14 +100,21 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(ideas: Vec<Idea>, repo_root: PathBuf) -> Self {
+    pub fn new(ideas: Vec<Idea>, projects: Vec<Project>, repo_root: PathBuf) -> Self {
         let filtered_indices: Vec<usize> = (0..ideas.len()).collect();
         let mut list_state = ListState::default();
         if !filtered_indices.is_empty() {
             list_state.select(Some(0));
         }
 
+        let project_filtered_indices: Vec<usize> = (0..projects.len()).collect();
+        let mut project_list_state = ListState::default();
+        if !project_filtered_indices.is_empty() {
+            project_list_state.select(Some(0));
+        }
+
         Self {
+            tab: Tab::Ideas,
             ideas,
             filtered_indices,
             list_state,
@@ -85,6 +123,14 @@ impl App {
             filter: StatusFilter::All,
             repo_root,
             should_quit: false,
+            projects,
+            project_filtered_indices,
+            project_list_state,
+            project_sort_by: ProjectSortBy::Analyzed,
+            project_category_filter: None,
+            analysis_content: String::new(),
+            analysis_scroll: 0,
+            analysis_total_lines: 0,
             md_files: Vec::new(),
             md_list_state: ListState::default(),
             md_content: String::new(),
@@ -282,6 +328,121 @@ impl App {
         self.md_scroll = self.md_total_lines.saturating_sub(10);
     }
 
+    // ============ Project Methods ============
+
+    pub fn filtered_projects(&self) -> Vec<&Project> {
+        self.project_filtered_indices
+            .iter()
+            .map(|&i| &self.projects[i])
+            .collect()
+    }
+
+    pub fn selected_project(&self) -> Option<&Project> {
+        self.project_list_state
+            .selected()
+            .and_then(|i| self.project_filtered_indices.get(i))
+            .map(|&idx| &self.projects[idx])
+    }
+
+    pub fn update_project_filter(&mut self) {
+        self.project_filtered_indices = self
+            .projects
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| {
+                if let Some(ref cat) = self.project_category_filter {
+                    if &p.category != cat {
+                        return false;
+                    }
+                }
+                if !self.search_query.is_empty() {
+                    let q = self.search_query.to_lowercase();
+                    if !p.name.to_lowercase().contains(&q)
+                        && !p.description.to_lowercase().contains(&q)
+                        && !p.category.to_lowercase().contains(&q)
+                    {
+                        return false;
+                    }
+                }
+                true
+            })
+            .map(|(i, _)| i)
+            .collect();
+
+        if self.project_filtered_indices.is_empty() {
+            self.project_list_state.select(None);
+        } else {
+            self.project_list_state.select(Some(0));
+        }
+    }
+
+    pub fn cycle_project_sort(&mut self) {
+        self.project_sort_by = self.project_sort_by.next();
+        sort_projects(&mut self.projects, self.project_sort_by);
+        self.update_project_filter();
+    }
+
+    pub fn project_next(&mut self) {
+        if self.project_filtered_indices.is_empty() {
+            return;
+        }
+        let i = match self.project_list_state.selected() {
+            Some(i) => {
+                if i >= self.project_filtered_indices.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.project_list_state.select(Some(i));
+    }
+
+    pub fn project_previous(&mut self) {
+        if self.project_filtered_indices.is_empty() {
+            return;
+        }
+        let i = match self.project_list_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.project_filtered_indices.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.project_list_state.select(Some(i));
+    }
+
+    pub fn open_analysis_preview(&mut self) {
+        if let Some(project) = self.selected_project() {
+            if let Some(content) = load_analysis_summary(&project.name) {
+                self.analysis_total_lines = content.lines().count() as u16;
+                self.analysis_content = content;
+                self.analysis_scroll = 0;
+                self.view = View::AnalysisPreview;
+            }
+        }
+    }
+
+    pub fn open_project_folder(&self) {
+        if let Some(project) = self.selected_project() {
+            let _ = Command::new("open").arg(&project.path).status();
+        }
+    }
+
+    pub fn analysis_scroll_down(&mut self, amount: u16) {
+        self.analysis_scroll = self.analysis_scroll.saturating_add(amount);
+    }
+
+    pub fn analysis_scroll_up(&mut self, amount: u16) {
+        self.analysis_scroll = self.analysis_scroll.saturating_sub(amount);
+    }
+
+    // ============ Key Handling ============
+
     pub fn handle_key(&mut self, code: KeyCode, _modifiers: KeyModifiers) {
         match self.view {
             View::List => {
@@ -290,31 +451,62 @@ impl App {
                         KeyCode::Esc => {
                             self.search_mode = false;
                             self.search_query.clear();
-                            self.update_filter();
+                            match self.tab {
+                                Tab::Ideas => self.update_filter(),
+                                Tab::Projects => self.update_project_filter(),
+                            }
                         }
                         KeyCode::Enter => {
                             self.search_mode = false;
                         }
                         KeyCode::Backspace => {
                             self.search_query.pop();
-                            self.update_filter();
+                            match self.tab {
+                                Tab::Ideas => self.update_filter(),
+                                Tab::Projects => self.update_project_filter(),
+                            }
                         }
                         KeyCode::Char(c) => {
                             self.search_query.push(c);
-                            self.update_filter();
+                            match self.tab {
+                                Tab::Ideas => self.update_filter(),
+                                Tab::Projects => self.update_project_filter(),
+                            }
                         }
                         _ => {}
                     }
                 } else {
                     match code {
                         KeyCode::Char('q') => self.should_quit = true,
-                        KeyCode::Char('j') | KeyCode::Down => self.next(),
-                        KeyCode::Char('k') | KeyCode::Up => self.previous(),
-                        KeyCode::Enter => self.enter_detail(),
-                        KeyCode::Char('s') => self.cycle_sort(),
-                        KeyCode::Char('f') => self.cycle_filter(),
+                        KeyCode::Tab => {
+                            self.tab = self.tab.next();
+                            self.search_query.clear();
+                        }
+                        KeyCode::Char('j') | KeyCode::Down => match self.tab {
+                            Tab::Ideas => self.next(),
+                            Tab::Projects => self.project_next(),
+                        },
+                        KeyCode::Char('k') | KeyCode::Up => match self.tab {
+                            Tab::Ideas => self.previous(),
+                            Tab::Projects => self.project_previous(),
+                        },
+                        KeyCode::Enter => match self.tab {
+                            Tab::Ideas => self.enter_detail(),
+                            Tab::Projects => self.open_analysis_preview(),
+                        },
+                        KeyCode::Char('s') => match self.tab {
+                            Tab::Ideas => self.cycle_sort(),
+                            Tab::Projects => self.cycle_project_sort(),
+                        },
+                        KeyCode::Char('f') => match self.tab {
+                            Tab::Ideas => self.cycle_filter(),
+                            Tab::Projects => {} // Could add category filter
+                        },
                         KeyCode::Char('e') => self.open_in_editor(),
-                        KeyCode::Char('o') => self.open_folder(),
+                        KeyCode::Char('o') => match self.tab {
+                            Tab::Ideas => self.open_folder(),
+                            Tab::Projects => self.open_project_folder(),
+                        },
                         KeyCode::Char('/') => {
                             self.search_mode = true;
                             self.search_query.clear();
@@ -346,6 +538,18 @@ impl App {
                 KeyCode::PageUp => self.md_scroll_up(20),
                 _ => {}
             },
+            View::AnalysisPreview => match code {
+                KeyCode::Char('q') => self.should_quit = true,
+                KeyCode::Esc => self.view = View::List,
+                KeyCode::Char('j') | KeyCode::Down => self.analysis_scroll_down(1),
+                KeyCode::Char('k') | KeyCode::Up => self.analysis_scroll_up(1),
+                KeyCode::Char('d') => self.analysis_scroll_down(10),
+                KeyCode::Char('u') => self.analysis_scroll_up(10),
+                KeyCode::Char('o') => self.open_project_folder(),
+                KeyCode::PageDown => self.analysis_scroll_down(20),
+                KeyCode::PageUp => self.analysis_scroll_up(20),
+                _ => {}
+            },
         }
     }
 
@@ -356,5 +560,11 @@ impl App {
         let dormant = self.ideas.iter().filter(|i| i.status == "dormant").count();
         let questions: usize = self.ideas.iter().map(|i| i.open_questions.len()).sum();
         (total, active, dormant, questions)
+    }
+
+    pub fn project_stats(&self) -> (usize, usize) {
+        let total = self.projects.len();
+        let analyzed = self.projects.iter().filter(|p| has_analysis_file(&p.name)).count();
+        (total, analyzed)
     }
 }

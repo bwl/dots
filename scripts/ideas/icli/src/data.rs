@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -288,4 +289,137 @@ pub fn load_dotfiles() -> Result<Vec<DxItem>> {
     let inventory: DxInventory = serde_json::from_str(&content)?;
 
     Ok(inventory.items)
+}
+
+// ============ Analysis ============
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectAnalysisMeta {
+    pub analyzed_at: String,
+    pub analyzed_commit: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AnalysisMeta {
+    pub version: u32,
+    pub projects: HashMap<String, ProjectAnalysisMeta>,
+}
+
+impl Default for AnalysisMeta {
+    fn default() -> Self {
+        Self {
+            version: 1,
+            projects: HashMap::new(),
+        }
+    }
+}
+
+pub fn load_analysis_meta() -> Result<AnalysisMeta> {
+    let home = dirs::home_dir().context("No home directory")?;
+    let meta_path = home.join("Developer/ideas/_data/analysis/_meta.json");
+
+    if !meta_path.exists() {
+        return Ok(AnalysisMeta::default());
+    }
+
+    let content = std::fs::read_to_string(&meta_path)?;
+    let meta: AnalysisMeta = serde_json::from_str(&content)?;
+
+    Ok(meta)
+}
+
+pub fn save_analysis_meta(meta: &AnalysisMeta) -> Result<()> {
+    let home = dirs::home_dir().context("No home directory")?;
+    let meta_path = home.join("Developer/ideas/_data/analysis/_meta.json");
+
+    let content = serde_json::to_string_pretty(meta)?;
+    std::fs::write(&meta_path, content)?;
+
+    Ok(())
+}
+
+pub fn analysis_dir() -> Result<PathBuf> {
+    let home = dirs::home_dir().context("No home directory")?;
+    Ok(home.join("Developer/ideas/_data/analysis"))
+}
+
+/// Get current HEAD commit for a project
+pub fn get_project_head_commit(project_path: &str) -> Option<String> {
+    let output = Command::new("git")
+        .args(["-C", project_path, "rev-parse", "--short", "HEAD"])
+        .output()
+        .ok()?;
+
+    if output.status.success() {
+        Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        None
+    }
+}
+
+/// Count commits since a given commit
+pub fn count_commits_since(project_path: &str, since_commit: &str) -> Option<u32> {
+    let output = Command::new("git")
+        .args(["-C", project_path, "rev-list", "--count", &format!("{}..HEAD", since_commit)])
+        .output()
+        .ok()?;
+
+    if output.status.success() {
+        String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .parse()
+            .ok()
+    } else {
+        None
+    }
+}
+
+#[derive(Debug)]
+pub struct DirtyProject {
+    pub name: String,
+    pub path: String,
+    pub analyzed_at: Option<String>,
+    pub analyzed_commit: Option<String>,
+    pub current_commit: Option<String>,
+    pub commits_since: Option<u32>,
+}
+
+/// Check if a project is dirty (needs re-analysis)
+pub fn check_project_dirty(project: &Project, meta: &AnalysisMeta) -> DirtyProject {
+    let analysis_meta = meta.projects.get(&project.name);
+    let current_commit = get_project_head_commit(&project.path);
+
+    let (analyzed_at, analyzed_commit, commits_since) = match analysis_meta {
+        Some(m) => {
+            let since = current_commit.as_ref().and_then(|_| {
+                count_commits_since(&project.path, &m.analyzed_commit)
+            });
+            (Some(m.analyzed_at.clone()), Some(m.analyzed_commit.clone()), since)
+        }
+        None => (None, None, None),
+    };
+
+    DirtyProject {
+        name: project.name.clone(),
+        path: project.path.clone(),
+        analyzed_at,
+        analyzed_commit,
+        current_commit,
+        commits_since,
+    }
+}
+
+/// Check if analysis file exists for a project
+pub fn has_analysis_file(project_name: &str) -> bool {
+    if let Ok(dir) = analysis_dir() {
+        dir.join(format!("{}.md", project_name)).exists()
+    } else {
+        false
+    }
+}
+
+/// Get analysis file path for a project
+pub fn analysis_file_path(project_name: &str) -> Result<PathBuf> {
+    let dir = analysis_dir()?;
+    Ok(dir.join(format!("{}.md", project_name)))
 }
