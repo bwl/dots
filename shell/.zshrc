@@ -25,6 +25,10 @@ ZSHRC_DIR="${${(%):-%x}:A:h}"
 # Claude Code sessions need minimal config - no prompt customization
 
 if [[ -n "$CLAUDECODE" ]] || [[ -n "$CLAUDE_CODE_SESSION" ]]; then
+  # Glob handling - prevent errors on unmatched patterns
+  setopt NO_NOMATCH    # Don't error when glob has no matches (pass through as literal)
+  setopt NULL_GLOB     # Failed globs expand to nothing instead of error
+
   # Minimal history
   setopt EXTENDED_HISTORY INC_APPEND_HISTORY SHARE_HISTORY HIST_IGNORE_DUPS HIST_IGNORE_SPACE
   HISTFILE="$HOME/.zsh_history"
