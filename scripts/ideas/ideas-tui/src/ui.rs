@@ -23,31 +23,11 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3), // Tabs + header
+            Constraint::Length(3), // Shortcuts + divider + tabs
             Constraint::Min(5),    // List
             Constraint::Length(3), // Status bar
         ])
         .split(frame.area());
-
-    // Tabs header with all 5 tabs
-    let tab_titles: Vec<String> = Tab::all()
-        .iter()
-        .map(|t| match t {
-            Tab::Ideas => format!(" Ideas ({}) ", app.ideas.len()),
-            Tab::Projects => format!(" Projects ({}) ", app.projects.len()),
-            Tab::Plans => format!(" Plans ({}) ", app.plans.len()),
-            Tab::Dotfiles => format!(" Dotfiles ({}) ", app.dotfiles.len()),
-            Tab::Status => " Status ".to_string(),
-        })
-        .collect();
-
-    let selected_tab = match app.tab {
-        Tab::Ideas => 0,
-        Tab::Projects => 1,
-        Tab::Plans => 2,
-        Tab::Dotfiles => 3,
-        Tab::Status => 4,
-    };
 
     let header_text = if app.search_mode {
         Line::from(vec![
@@ -66,9 +46,9 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
                 Span::styled("[Tab] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Switch  "),
                 Span::styled("[s] ", Style::default().fg(Color::Cyan)),
-                Span::raw(format!("Sort:{}  ", app.sort_by.label())),
+                Span::raw(format!("Sort:{}  ", app.ideas.sort_by.label())),
                 Span::styled("[f] ", Style::default().fg(Color::Cyan)),
-                Span::raw(format!("Filter:{}  ", app.filter.label())),
+                Span::raw(format!("Filter:{}  ", app.ideas.filter.label())),
                 Span::styled("[/] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Search  "),
                 Span::styled("[^F] ", Style::default().fg(Color::Cyan)),
@@ -78,9 +58,15 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
                 Span::styled("[Tab] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Switch  "),
                 Span::styled("[s] ", Style::default().fg(Color::Cyan)),
-                Span::raw(format!("Sort:{}  ", app.project_sort_by.label())),
+                Span::raw(format!("Sort:{}  ", app.projects.sort_by.label())),
                 Span::styled("[Enter] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Detail  "),
+                Span::styled("[a] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Analyze  "),
+                Span::styled("[A] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Deep  "),
+                Span::styled("[r] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Refresh  "),
                 Span::styled("[/] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Search"),
             ]),
@@ -88,7 +74,7 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
                 Span::styled("[Tab] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Switch  "),
                 Span::styled("[s] ", Style::default().fg(Color::Cyan)),
-                Span::raw(format!("Sort:{}  ", app.plan_sort_by.label())),
+                Span::raw(format!("Sort:{}  ", app.plans.sort_by.label())),
                 Span::styled("[Enter] ", Style::default().fg(Color::Cyan)),
                 Span::raw("View  "),
                 Span::styled("[/] ", Style::default().fg(Color::Cyan)),
@@ -98,7 +84,7 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
                 Span::styled("[Tab] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Switch  "),
                 Span::styled("[s] ", Style::default().fg(Color::Cyan)),
-                Span::raw(format!("Sort:{}  ", app.dotfiles_sort_by.label())),
+                Span::raw(format!("Sort:{}  ", app.dotfiles.sort_by.label())),
                 Span::styled("[Enter] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Open  "),
                 Span::styled("[/] ", Style::default().fg(Color::Cyan)),
@@ -110,32 +96,62 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
                 Span::styled("[r] ", Style::default().fg(Color::Cyan)),
                 Span::raw("Refresh  "),
                 Span::styled("[↑↓] ", Style::default().fg(Color::Cyan)),
-                Span::raw("Sections"),
+                Span::raw("Sections  "),
+                Span::styled("[Enter] ", Style::default().fg(Color::Cyan)),
+                Span::raw("Jump"),
             ]),
         }
     };
 
-    let tabs = Tabs::new(tab_titles)
-        .block(Block::default().borders(Borders::ALL))
-        .select(selected_tab)
-        .style(Style::default().fg(Color::DarkGray))
-        .highlight_style(
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        );
-
-    // Split header area for tabs and controls
-    let header_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(60), Constraint::Min(20)])
+    let header_rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(1), Constraint::Length(1), Constraint::Length(1)])
         .split(chunks[0]);
 
-    frame.render_widget(tabs, header_chunks[0]);
+    // Shortcuts / search bar
+    frame.render_widget(Paragraph::new(header_text), header_rows[0]);
+
+    // Divider
+    let divider = "─".repeat(header_rows[1].width as usize);
     frame.render_widget(
-        Paragraph::new(header_text).block(Block::default().borders(Borders::ALL)),
-        header_chunks[1],
+        Paragraph::new(Line::from(Span::styled(
+            divider,
+            Style::default().fg(Color::DarkGray),
+        ))),
+        header_rows[1],
     );
+
+    // Tabs row
+    let normal = Style::default().fg(Color::DarkGray);
+    let selected = Style::default()
+        .fg(Color::Yellow)
+        .add_modifier(Modifier::BOLD);
+
+    let mut tabs_spans = Vec::new();
+    let push_tab = |spans: &mut Vec<Span>, tab: Tab, label: String| {
+        let style = if app.tab == tab { selected } else { normal };
+        spans.push(Span::styled(label, style));
+    };
+
+    push_tab(&mut tabs_spans, Tab::Ideas, format!("Ideas ({})", app.ideas.list.len()));
+    tabs_spans.push(Span::raw("  │  "));
+    push_tab(
+        &mut tabs_spans,
+        Tab::Projects,
+        format!("Projects ({})", app.projects.list.len()),
+    );
+    tabs_spans.push(Span::raw("  │  "));
+    push_tab(&mut tabs_spans, Tab::Plans, format!("Plans ({})", app.plans.list.len()));
+    tabs_spans.push(Span::raw("  │  "));
+    push_tab(
+        &mut tabs_spans,
+        Tab::Dotfiles,
+        format!("Dotfiles ({})", app.dotfiles.list.len()),
+    );
+    tabs_spans.push(Span::raw("  │  "));
+    push_tab(&mut tabs_spans, Tab::Status, "Status".to_string());
+
+    frame.render_widget(Paragraph::new(Line::from(tabs_spans)), header_rows[2]);
 
     // List - different content based on tab
     match app.tab {
@@ -149,10 +165,10 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
     // Status bar
     let status_bar = if app.search_mode {
         let matches = match app.tab {
-            Tab::Ideas => app.filtered_indices.len(),
-            Tab::Projects => app.project_filtered_indices.len(),
-            Tab::Plans => app.plan_filtered_indices.len(),
-            Tab::Dotfiles => app.dotfiles_filtered_indices.len(),
+            Tab::Ideas => app.ideas.list.filtered_len(),
+            Tab::Projects => app.projects.list.filtered_len(),
+            Tab::Plans => app.plans.list.filtered_len(),
+            Tab::Dotfiles => app.dotfiles.list.filtered_len(),
             Tab::Status => 0,
         };
         Paragraph::new(Line::from(vec![
@@ -189,7 +205,7 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
             }
             Tab::Projects => {
                 let (total, analyzed) = app.project_stats();
-                Paragraph::new(Line::from(vec![
+                let mut spans = vec![
                     Span::raw(format!(" {} projects", total)),
                     Span::raw(" │ "),
                     Span::styled(
@@ -201,8 +217,12 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
                         format!("{} pending", total - analyzed),
                         Style::default().fg(Color::DarkGray),
                     ),
-                ]))
-                .block(Block::default().borders(Borders::ALL))
+                ];
+                if let Some(msg) = &app.projects.busy_message {
+                    spans.push(Span::raw(" │ "));
+                    spans.push(Span::styled(msg, Style::default().fg(Color::DarkGray)));
+                }
+                Paragraph::new(Line::from(spans)).block(Block::default().borders(Borders::ALL))
             }
             Tab::Plans => {
                 let total = app.plan_stats();
@@ -216,7 +236,7 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
             }
             Tab::Status => {
                 let (untracked, stale, recent) = app.status_stats();
-                Paragraph::new(Line::from(vec![
+                let mut spans = vec![
                     Span::styled(
                         format!(" {} new", untracked),
                         Style::default().fg(Color::Green),
@@ -228,8 +248,15 @@ fn draw_list_view(frame: &mut Frame, app: &mut App) {
                         format!("{} recent (7d)", recent),
                         Style::default().fg(Color::Cyan),
                     ),
-                ]))
-                .block(Block::default().borders(Borders::ALL))
+                ];
+                if app.status.is_loading {
+                    spans.push(Span::raw(" │ "));
+                    spans.push(Span::styled(
+                        "loading…",
+                        Style::default().fg(Color::DarkGray),
+                    ));
+                }
+                Paragraph::new(Line::from(spans)).block(Block::default().borders(Borders::ALL))
             }
         }
     };
@@ -297,7 +324,7 @@ fn draw_ideas_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::Rect
         )
         .highlight_symbol("▶ ");
 
-    frame.render_stateful_widget(list, area, &mut app.list_state);
+    frame.render_stateful_widget(list, area, &mut app.ideas.list.list_state);
 }
 
 fn draw_projects_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::Rect) {
@@ -340,7 +367,10 @@ fn draw_projects_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::R
                     format!("{:<12}", &p.last_commit),
                     Style::default().fg(Color::DarkGray),
                 ),
-                Span::raw(truncate(&p.description, desc_width)),
+                Span::raw(truncate(
+                    &clean_desc(if !p.summary.is_empty() { &p.summary } else { &p.description }),
+                    desc_width,
+                )),
             ]);
             ListItem::new(line)
         })
@@ -355,7 +385,7 @@ fn draw_projects_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::R
         )
         .highlight_symbol("▶ ");
 
-    frame.render_stateful_widget(list, area, &mut app.project_list_state);
+    frame.render_stateful_widget(list, area, &mut app.projects.list.list_state);
 }
 
 fn draw_plans_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::Rect) {
@@ -394,7 +424,7 @@ fn draw_plans_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::Rect
         )
         .highlight_symbol("▶ ");
 
-    frame.render_stateful_widget(list, area, &mut app.plan_list_state);
+    frame.render_stateful_widget(list, area, &mut app.plans.list.list_state);
 }
 
 fn draw_dotfiles_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::Rect) {
@@ -442,7 +472,7 @@ fn draw_dotfiles_list(frame: &mut Frame, app: &mut App, area: ratatui::layout::R
         )
         .highlight_symbol("▶ ");
 
-    frame.render_stateful_widget(list, area, &mut app.dotfiles_list_state);
+    frame.render_stateful_widget(list, area, &mut app.dotfiles.list.list_state);
 }
 
 fn draw_status_dashboard(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
@@ -456,36 +486,43 @@ fn draw_status_dashboard(frame: &mut Frame, app: &App, area: ratatui::layout::Re
         .split(area);
 
     // Untracked projects section
-    let untracked_items: Vec<ListItem> = app
-        .untracked_projects
-        .iter()
-        .take(5)
-        .map(|p| {
-            let line = Line::from(vec![
-                Span::styled(
-                    format!("{:<20}", truncate(&p.name, 19)),
-                    Style::default().fg(Color::White),
-                ),
-                Span::styled(
-                    format!("{:<15}", truncate(&p.tech, 14)),
-                    Style::default().fg(Color::Cyan),
-                ),
-                Span::styled(
-                    format!("{} commits", p.commits),
-                    Style::default().fg(Color::DarkGray),
-                ),
-            ]);
-            ListItem::new(line)
-        })
-        .collect();
+    let untracked_items: Vec<ListItem> = if app.status.is_loading && app.status.untracked_projects.is_empty() {
+        vec![ListItem::new(Line::from(Span::styled(
+            "  Loading…",
+            Style::default().fg(Color::DarkGray),
+        )))]
+    } else {
+        app.status
+            .untracked_projects
+            .iter()
+            .take(5)
+            .map(|p| {
+                let line = Line::from(vec![
+                    Span::styled(
+                        format!("{:<20}", truncate(&p.name, 19)),
+                        Style::default().fg(Color::White),
+                    ),
+                    Span::styled(
+                        format!("{:<15}", truncate(&p.tech, 14)),
+                        Style::default().fg(Color::Cyan),
+                    ),
+                    Span::styled(
+                        format!("{} commits", p.commits),
+                        Style::default().fg(Color::DarkGray),
+                    ),
+                ]);
+                ListItem::new(line)
+            })
+            .collect()
+    };
 
     let untracked_block = Block::default()
         .borders(Borders::ALL)
         .title(format!(
             " Untracked Projects ({}) ",
-            app.untracked_projects.len()
+            app.status.untracked_projects.len()
         ))
-        .border_style(if app.status_section == 0 {
+        .border_style(if app.status.section == 0 {
             Style::default().fg(Color::Yellow)
         } else {
             Style::default()
@@ -495,29 +532,36 @@ fn draw_status_dashboard(frame: &mut Frame, app: &App, area: ratatui::layout::Re
     frame.render_widget(untracked_list, chunks[0]);
 
     // Stale analyses section
-    let stale_items: Vec<ListItem> = app
-        .stale_projects
-        .iter()
-        .take(5)
-        .map(|(name, commits)| {
-            let line = Line::from(vec![
-                Span::styled(
-                    format!("{:<25}", truncate(name, 24)),
-                    Style::default().fg(Color::White),
-                ),
-                Span::styled(
-                    format!("{} commits behind", commits),
-                    Style::default().fg(Color::Yellow),
-                ),
-            ]);
-            ListItem::new(line)
-        })
-        .collect();
+    let stale_items: Vec<ListItem> = if app.status.is_loading && app.status.stale_projects.is_empty() {
+        vec![ListItem::new(Line::from(Span::styled(
+            "  Loading…",
+            Style::default().fg(Color::DarkGray),
+        )))]
+    } else {
+        app.status
+            .stale_projects
+            .iter()
+            .take(5)
+            .map(|(name, commits)| {
+                let line = Line::from(vec![
+                    Span::styled(
+                        format!("{:<25}", truncate(name, 24)),
+                        Style::default().fg(Color::White),
+                    ),
+                    Span::styled(
+                        format!("{} commits behind", commits),
+                        Style::default().fg(Color::Yellow),
+                    ),
+                ]);
+                ListItem::new(line)
+            })
+            .collect()
+    };
 
     let stale_block = Block::default()
         .borders(Borders::ALL)
-        .title(format!(" Stale Analyses ({}) ", app.stale_projects.len()))
-        .border_style(if app.status_section == 1 {
+        .title(format!(" Stale Analyses ({}) ", app.status.stale_projects.len()))
+        .border_style(if app.status.section == 1 {
             Style::default().fg(Color::Yellow)
         } else {
             Style::default()
@@ -527,30 +571,37 @@ fn draw_status_dashboard(frame: &mut Frame, app: &App, area: ratatui::layout::Re
     frame.render_widget(stale_list, chunks[1]);
 
     // Recent activity section
-    let recent_items: Vec<ListItem> = app
-        .recent_activity
-        .iter()
-        .take(5)
-        .map(|p| {
-            let line = Line::from(vec![
-                Span::styled(
-                    format!("{:<20}", truncate(&p.name, 19)),
-                    Style::default().fg(Color::White),
-                ),
-                Span::styled(
-                    format!("{:<12}", &p.last_commit_date),
-                    Style::default().fg(Color::Green),
-                ),
-                Span::raw(truncate(&p.last_commit_msg, 40)),
-            ]);
-            ListItem::new(line)
-        })
-        .collect();
+    let recent_items: Vec<ListItem> = if app.status.is_loading && app.status.recent_activity.is_empty() {
+        vec![ListItem::new(Line::from(Span::styled(
+            "  Loading…",
+            Style::default().fg(Color::DarkGray),
+        )))]
+    } else {
+        app.status
+            .recent_activity
+            .iter()
+            .take(5)
+            .map(|p| {
+                let line = Line::from(vec![
+                    Span::styled(
+                        format!("{:<20}", truncate(&p.name, 19)),
+                        Style::default().fg(Color::White),
+                    ),
+                    Span::styled(
+                        format!("{:<12}", &p.last_commit_date),
+                        Style::default().fg(Color::Green),
+                    ),
+                    Span::raw(truncate(&p.last_commit_msg, 40)),
+                ]);
+                ListItem::new(line)
+            })
+            .collect()
+    };
 
     let recent_block = Block::default()
         .borders(Borders::ALL)
-        .title(format!(" Recent Activity ({}) ", app.recent_activity.len()))
-        .border_style(if app.status_section == 2 {
+        .title(format!(" Recent Activity ({}) ", app.status.recent_activity.len()))
+        .border_style(if app.status.section == 2 {
             Style::default().fg(Color::Yellow)
         } else {
             Style::default()
@@ -637,7 +688,8 @@ fn draw_detail_view(frame: &mut Frame, app: &mut App) {
 
     // Markdown files section
     let md_items: Vec<ListItem> = app
-        .md_files
+        .markdown
+        .files
         .iter()
         .map(|path| {
             let filename = path
@@ -652,7 +704,7 @@ fn draw_detail_view(frame: &mut Frame, app: &mut App) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(format!(" Markdown Files ({}) ", app.md_files.len())),
+                .title(format!(" Markdown Files ({}) ", app.markdown.files.len())),
         )
         .highlight_style(
             Style::default()
@@ -661,7 +713,7 @@ fn draw_detail_view(frame: &mut Frame, app: &mut App) {
         )
         .highlight_symbol("▶ ");
 
-    frame.render_stateful_widget(md_list, chunks[2], &mut app.md_list_state);
+    frame.render_stateful_widget(md_list, chunks[2], &mut app.markdown.list_state);
 
     // Actions
     let actions = Paragraph::new(Line::from(vec![
@@ -697,7 +749,7 @@ fn draw_project_detail(frame: &mut Frame, app: &mut App) {
 
     // Tab bar
     let tab_titles = vec![" Info ", " Analysis "];
-    let selected_tab = match app.project_detail_tab {
+    let selected_tab = match app.projects.detail_tab {
         ProjectDetailTab::Info => 0,
         ProjectDetailTab::Analysis => 1,
     };
@@ -718,7 +770,7 @@ fn draw_project_detail(frame: &mut Frame, app: &mut App) {
     frame.render_widget(tabs, chunks[0]);
 
     // Content based on selected tab
-    match app.project_detail_tab {
+    match app.projects.detail_tab {
         ProjectDetailTab::Info => {
             let analyzed = has_analysis_file(&project.name);
             let analysis_status = if analyzed {
@@ -756,17 +808,21 @@ fn draw_project_detail(frame: &mut Frame, app: &mut App) {
                 Line::from(vec![
                     Span::styled("Description: ", Style::default().fg(Color::DarkGray)),
                 ]),
-                Line::from(Span::raw(&project.description)),
+                Line::from(Span::raw(clean_desc(if !project.summary.is_empty() {
+                    &project.summary
+                } else {
+                    &project.description
+                }))),
             ];
 
             let info = Paragraph::new(info_lines)
                 .block(Block::default().borders(Borders::ALL))
-                .scroll((app.project_info_scroll, 0))
+                .scroll((app.projects.info_scroll, 0))
                 .wrap(Wrap { trim: true });
             frame.render_widget(info, chunks[1]);
         }
         ProjectDetailTab::Analysis => {
-            if app.analysis_content.is_empty() {
+            if app.projects.analysis_content.is_empty() {
                 let no_analysis = Paragraph::new(Line::from(vec![
                     Span::styled(
                         "No analysis available. Run: ",
@@ -780,9 +836,9 @@ fn draw_project_detail(frame: &mut Frame, app: &mut App) {
                 .block(Block::default().borders(Borders::ALL));
                 frame.render_widget(no_analysis, chunks[1]);
             } else {
-                let text = tui_markdown::from_str(&app.analysis_content);
+                let text = tui_markdown::from_str(&app.projects.analysis_content);
                 let paragraph = Paragraph::new(text)
-                    .scroll((app.analysis_scroll, 0))
+                    .scroll((app.projects.analysis_scroll, 0))
                     .block(Block::default().borders(Borders::ALL))
                     .wrap(Wrap { trim: false });
                 frame.render_widget(paragraph, chunks[1]);
@@ -820,9 +876,9 @@ fn draw_plan_viewer(frame: &mut Frame, app: &App) {
         .split(frame.area());
 
     // Render plan content as markdown
-    let text = tui_markdown::from_str(&app.plan_content);
+    let text = tui_markdown::from_str(&app.plans.content);
     let paragraph = Paragraph::new(text)
-        .scroll((app.plan_scroll, 0))
+        .scroll((app.plans.scroll, 0))
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -842,7 +898,11 @@ fn draw_plan_viewer(frame: &mut Frame, app: &App) {
         Span::styled("[Esc] ", Style::default().fg(Color::Cyan)),
         Span::raw("Back  "),
         Span::styled(
-            format!("Line {}/{}", app.plan_scroll + 1, app.plan_total_lines),
+            format!(
+                "Line {}/{}",
+                app.plans.scroll + 1,
+                app.plans.total_lines
+            ),
             Style::default().fg(Color::DarkGray),
         ),
     ]))
@@ -889,7 +949,8 @@ fn draw_global_search(frame: &mut Frame, app: &mut App) {
 
     // Results
     let items: Vec<ListItem> = app
-        .search_results
+        .global_search
+        .results
         .iter()
         .map(|result| {
             let source_color = match result.source {
@@ -921,7 +982,7 @@ fn draw_global_search(frame: &mut Frame, app: &mut App) {
         })
         .collect();
 
-    let results_title = format!(" Results ({}) ", app.search_results.len());
+    let results_title = format!(" Results ({}) ", app.global_search.results.len());
     let results_list = List::new(items)
         .block(Block::default().borders(Borders::ALL).title(results_title))
         .highlight_style(
@@ -931,7 +992,11 @@ fn draw_global_search(frame: &mut Frame, app: &mut App) {
         )
         .highlight_symbol("▶ ");
 
-    frame.render_stateful_widget(results_list, chunks[1], &mut app.search_results_state);
+    frame.render_stateful_widget(
+        results_list,
+        chunks[1],
+        &mut app.global_search.list_state,
+    );
 
     // Footer
     let footer = if app.search_mode {
@@ -961,10 +1026,26 @@ fn draw_global_search(frame: &mut Frame, app: &mut App) {
 }
 
 fn truncate(s: &str, max_len: usize) -> String {
-    if s.len() <= max_len {
-        s.to_string()
-    } else {
-        format!("{}…", &s[..max_len - 1])
+    if max_len == 0 {
+        return String::new();
+    }
+
+    let char_count = s.chars().count();
+    if char_count <= max_len {
+        return s.to_string();
+    }
+
+    let prefix: String = s.chars().take(max_len.saturating_sub(1)).collect();
+    format!("{prefix}…")
+}
+
+/// Strip leading "A " from description and capitalize first letter.
+fn clean_desc(s: &str) -> String {
+    let s = s.strip_prefix("A ").unwrap_or(s);
+    let mut chars = s.chars();
+    match chars.next() {
+        Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+        None => String::new(),
     }
 }
 
@@ -984,9 +1065,9 @@ fn draw_markdown_reader(frame: &mut Frame, app: &App) {
         .split(frame.area());
 
     // Render markdown content
-    let text = tui_markdown::from_str(&app.md_content);
+    let text = tui_markdown::from_str(&app.markdown.content);
     let paragraph = Paragraph::new(text)
-        .scroll((app.md_scroll, 0))
+        .scroll((app.markdown.scroll, 0))
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -1006,11 +1087,14 @@ fn draw_markdown_reader(frame: &mut Frame, app: &App) {
         Span::styled("[Esc] ", Style::default().fg(Color::Cyan)),
         Span::raw("Back  "),
         Span::styled(
-            format!("Line {}/{}", app.md_scroll + 1, app.md_total_lines),
+            format!(
+                "Line {}/{}",
+                app.markdown.scroll + 1,
+                app.markdown.total_lines
+            ),
             Style::default().fg(Color::DarkGray),
         ),
     ]))
     .block(Block::default().borders(Borders::ALL));
     frame.render_widget(footer, chunks[1]);
 }
-

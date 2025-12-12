@@ -7,17 +7,28 @@
 use std::path::{Path, PathBuf};
 
 // Re-export core types and functions
+#[allow(unused_imports)]
 pub use ideas_core::{
     // Ideas
-    find_ideas_repo, load_ideas, Idea,
+    find_ideas_repo, find_ideas_repo_with_paths, load_ideas, Idea, IdeasPaths,
     // Projects
-    has_analysis_file, load_analysis_summary, load_projects, Project,
+    has_analysis_file, has_analysis_file_with_paths, load_analysis_summary,
+    load_analysis_summary_with_paths, load_projects, load_projects_with_paths, Project,
     // Plans
-    load_plans, Plan,
+    load_plans, load_plans_with_paths, Plan,
     // Dotfiles
-    load_dotfiles, DxItem,
+    load_dotfiles, load_dotfiles_with_paths, DxItem,
+    // Search helpers
+    dxitem_matches_query, idea_matches_query, normalize_query, plan_matches_query,
+    project_matches_query,
     // Status/Analysis
-    check_project_dirty, detect_untracked_projects, get_recent_activity, load_analysis_meta,
+    check_project_dirty, detect_untracked_projects, detect_untracked_projects_with_paths,
+    get_recent_activity, get_recent_activity_with_paths, load_analysis_meta,
+    load_analysis_meta_with_paths, save_analysis_meta_with_paths,
+    // Git/util
+    chrono_now, get_project_head_commit,
+    // Analysis types
+    ProjectAnalysisMeta,
     RecentProject, UntrackedProject,
 };
 

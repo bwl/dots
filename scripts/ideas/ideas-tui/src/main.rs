@@ -9,19 +9,25 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use data::{find_ideas_repo, load_dotfiles, load_ideas, load_plans, load_projects};
+use data::{
+    find_ideas_repo_with_paths, load_dotfiles_with_paths, load_ideas, load_plans_with_paths,
+    load_projects_with_paths, IdeasPaths,
+};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
+use std::time::Duration;
 
 fn main() -> Result<()> {
+    let paths = IdeasPaths::detect()?;
+
     // Find repo root (look for _tracker.csv)
-    let repo_root = find_ideas_repo()?;
+    let repo_root = find_ideas_repo_with_paths(&paths)?;
 
     // Load all data sources
     let ideas = load_ideas(&repo_root)?;
-    let projects = load_projects().unwrap_or_default();
-    let plans = load_plans().unwrap_or_default();
-    let dotfiles = load_dotfiles().unwrap_or_default();
+    let projects = load_projects_with_paths(&paths).unwrap_or_default();
+    let plans = load_plans_with_paths(&paths).unwrap_or_default();
+    let dotfiles = load_dotfiles_with_paths(&paths).unwrap_or_default();
 
     // Setup terminal
     enable_raw_mode()?;
@@ -31,7 +37,7 @@ fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     // Create app with all data sources
-    let mut app = App::new(ideas, projects, plans, dotfiles, repo_root);
+    let mut app = App::new(paths, ideas, projects, plans, dotfiles, repo_root);
 
     // Run app
     let res = run_app(&mut terminal, &mut app);
@@ -54,11 +60,14 @@ fn main() -> Result<()> {
 
 fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, app: &mut App) -> Result<()> {
     loop {
+        app.tick();
         terminal.draw(|f| ui::draw(f, app))?;
 
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                app.handle_key(key.code, key.modifiers);
+        if event::poll(Duration::from_millis(100))? {
+            if let Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press {
+                    app.handle_key(key.code, key.modifiers);
+                }
             }
         }
 

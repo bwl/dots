@@ -98,24 +98,56 @@ detect_tech() {
     echo "${tech:-unknown}"
 }
 
-# Get description from README or package file
+# Get summary from analysis blockquote or _meta.json
+get_summary() {
+    local name="$1"
+    local analysis_file="$IDEAS_REPO/_data/analysis/$name.md"
+    local meta_file="$IDEAS_REPO/_data/analysis/_meta.json"
+
+    # Try analysis blockquote first (highest quality)
+    if [[ -f "$analysis_file" ]]; then
+        local blockquote
+        blockquote=$(grep '^> ' "$analysis_file" | head -1 | sed 's/^> //' | cut -c1-120)
+        [[ -n "$blockquote" ]] && echo "$blockquote" && return
+    fi
+
+    # Try _meta.json summaries (AI-generated)
+    if [[ -f "$meta_file" ]]; then
+        local meta_summary
+        meta_summary=$(jq -r ".summaries[\"$name\"] // empty" "$meta_file" 2>/dev/null)
+        [[ -n "$meta_summary" ]] && echo "$meta_summary" && return
+    fi
+
+    echo ""
+}
+
+# Get description from README or package file (fallback when no summary)
 get_description() {
     local dir="$1"
     local desc=""
 
-    # Try README.md first line after title
-    if [[ -f "$dir/README.md" ]]; then
-        desc=$(sed -n '1,10p' "$dir/README.md" | grep -v '^#' | grep -v '^$' | head -1 | cut -c1-80)
-    fi
-
-    # Try Cargo.toml description
-    if [[ -z "$desc" && -f "$dir/Cargo.toml" ]]; then
-        desc=$(grep '^description' "$dir/Cargo.toml" 2>/dev/null | head -1 | sed 's/description = "\(.*\)"/\1/' | cut -c1-80)
+    # Try Cargo.toml description first (usually human-written, high quality)
+    if [[ -f "$dir/Cargo.toml" ]]; then
+        desc=$(grep '^description' "$dir/Cargo.toml" 2>/dev/null | head -1 | sed 's/description = "\(.*\)"/\1/' | cut -c1-120)
     fi
 
     # Try package.json description
     if [[ -z "$desc" && -f "$dir/package.json" ]]; then
-        desc=$(grep '"description"' "$dir/package.json" 2>/dev/null | head -1 | sed 's/.*"description": "\([^"]*\)".*/\1/' | cut -c1-80)
+        desc=$(jq -r '.description // empty' "$dir/package.json" 2>/dev/null | cut -c1-120)
+    fi
+
+    # Fall back to filtered README (skip badges, comments, TOC)
+    if [[ -z "$desc" && -f "$dir/README.md" ]]; then
+        desc=$(sed -n '1,20p' "$dir/README.md" \
+            | grep -v '^#' \
+            | grep -v '^$' \
+            | grep -v '^!\[' \
+            | grep -v '^<!--' \
+            | grep -v '^\[.*\]:' \
+            | grep -v '^- \[' \
+            | grep -v '^>\s*$' \
+            | grep -v '^<' \
+            | head -1 | cut -c1-120)
     fi
 
     echo "${desc:--}"
@@ -178,6 +210,7 @@ for source_spec in "${SOURCES[@]}"; do
         # Get project data
         category=$(get_category "$name")
         tech=$(detect_tech "$project")
+        summary=$(get_summary "$name")
         desc=$(get_description "$project")
         git_info=$(get_git_info "$project")
         last_commit="${git_info%%|*}"
@@ -205,6 +238,7 @@ for source_spec in "${SOURCES[@]}"; do
       "tech": "$(json_escape "$tech")",
       "last_commit": "$last_commit",
       "commits": $commits,
+      "summary": "$(json_escape "$summary")",
       "description": "$(json_escape "$desc")"
     }
 EOF
