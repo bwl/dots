@@ -7,9 +7,9 @@
 
 # font-family = IosevkaTerm Nerd Font Mono
 # font-family = IosevkaTermSlab Nerd Font Mono
-
 font-family = GoMono Nerd Font
-font-size = 16
+
+font-size = 14
 theme = Horizon
 
 # --- Window ---
@@ -59,3 +59,4 @@ keybind = cmd+shift+r=reload_config
 # Managed by ~/.config/ghostty/switch-shader.sh
 # Run the script to select and hot-reload shaders
 # custom-shader = /Users/bwl/.config/ghostty/shaders/current.glsl
+# keybind = shift+enter=text:\x1b\r
