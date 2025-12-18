@@ -95,14 +95,11 @@ fi
 echo -e "${GREEN}Setting up ~/.config directories...${NC}"
 mkdir -p "$HOME/.config"
 
-# Symlink each config directory individually (except tmuxifier - handled separately)
+# Symlink each config directory individually
 for config_dir in "$DOTFILES_DIR/config"/*; do
     if [[ -d "$config_dir" ]]; then
         config_name=$(basename "$config_dir")
-        # Skip tmuxifier - it goes to ~/.tmuxifier not ~/.config/
-        if [[ "$config_name" != "tmuxifier" ]]; then
-            create_symlink "$config_dir" "$HOME/.config/$config_name"
-        fi
+        create_symlink "$config_dir" "$HOME/.config/$config_name"
     fi
 done
 echo ""
@@ -117,11 +114,11 @@ if [[ -d "$DOTFILES_DIR/bin" ]]; then
 fi
 
 # ============================================================================
-# Tmuxifier (special case - goes to ~/.tmuxifier not ~/.config/)
+# Tmuxifier (from vendor/ - goes to ~/.tmuxifier not ~/.config/)
 # ============================================================================
-if [[ -d "$DOTFILES_DIR/config/tmuxifier" ]]; then
+if [[ -d "$DOTFILES_DIR/vendor/tmuxifier" ]]; then
     echo -e "${GREEN}Setting up tmuxifier...${NC}"
-    create_symlink "$DOTFILES_DIR/config/tmuxifier" "$HOME/.tmuxifier"
+    create_symlink "$DOTFILES_DIR/vendor/tmuxifier" "$HOME/.tmuxifier"
     echo ""
 fi
 

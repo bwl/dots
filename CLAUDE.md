@@ -247,11 +247,13 @@ dotfiles/
 │   ├── ghostty/       # Terminal emulator config + shaders
 │   ├── sketchybar/    # Custom macOS status bar
 │   ├── tmux/          # tmux.conf + custom menu
-│   ├── tmuxifier/     # Tmux layout manager (symlinked to ~/.tmuxifier)
 │   ├── karabiner/     # Keyboard customization
 │   ├── gh/            # GitHub CLI config
 │   ├── fd/            # fd config
 │   └── yazi/          # File manager config
+├── vendor/             # Cloned external tools (gitignored)
+│   ├── tmuxifier/     # Tmux layout manager (symlinked to ~/.tmuxifier)
+│   └── cleanup-cache/ # Cache cleanup tool (binary: tidyup)
 ├── git/                # .gitconfig + .gitignore_global
 ├── ssh/                # SSH config (NOT keys!)
 ├── vscode/             # VS Code settings.json
@@ -279,8 +281,6 @@ dotfiles/
 These directories exist in the repo but are not actively used:
 
 - **`claude-thoughts/`** - Archive of tmux multiplexer analysis (12 markdown files, ~176KB). Historical exploration from tmux-fresh development. Read-only reference.
-
-- **`libraries/`** - Git submodule placeholder for tuios. Currently empty/unused. May be removed in future cleanup.
 
 - **`.taskbook/`** - Legacy taskbook data from before migration to `bd` (beads). Can be safely ignored.
 
@@ -323,8 +323,8 @@ The `setup_symlinks.sh` script creates symlinks from `~/dotfiles/` to standard l
 1. **Shell files**: `shell/.zshrc` → `~/.zshrc` (etc.)
 2. **Git configs**: `git/.gitconfig` → `~/.gitconfig`
 3. **SSH config**: `ssh/config` → `~/.ssh/config`
-4. **Config dirs**: Each `config/*` → `~/.config/*` (individual symlinks per directory, except tmuxifier)
-5. **Tmuxifier**: `config/tmuxifier` → `~/.tmuxifier` (special case - not in ~/.config/)
+4. **Config dirs**: Each `config/*` → `~/.config/*` (individual symlinks per directory)
+5. **Tmuxifier**: `vendor/tmuxifier` → `~/.tmuxifier` (from vendor/, not ~/.config/)
 6. **Claude Code**: `.claude/skills/` → `~/.claude/skills/`, `.claude/CLAUDE.md` → `~/.claude/CLAUDE.md`, `.claude/settings.local.json` → `~/.claude/settings.local.json`
 7. **User bin**: `bin/` → `~/bin/`
 8. **VS Code**: `vscode/settings.json` → `~/Library/Application Support/Code/User/settings.json`
@@ -503,7 +503,7 @@ Custom skills extend Claude Code's capabilities. Managed in `.claude/skills/` (s
   - **gum**: Interactive shell script components
   - **sampler**: Terminal-based dashboard visualization
   - **sesh**: Tmux session manager (installed via `go install github.com/joshmedeski/sesh@latest`)
-  - **tmuxifier**: Tmux layout/window manager (git clone to ~/.tmuxifier, symlinked from dotfiles)
+  - **tmuxifier**: Tmux layout/window manager (in vendor/, symlinked to ~/.tmuxifier)
   - **automux**: Automated tmux session launcher (cloned to ~/bin/automux)
   - **tmux-harpoon**: Quick tmux window navigation (TPM plugin)
 

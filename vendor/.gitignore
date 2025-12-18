@@ -1,0 +1,4 @@
+# Ignore all cloned repos except documentation
+*
+!.gitignore
+!README.md
