@@ -35,9 +35,6 @@ ssh/authorized_keys
 # But DO track project-specific CLAUDE.md (this overrides above)
 !CLAUDE.md
 
-# bd issue tracker - .beads/.gitignore controls what's committed
-# (tracks .jsonl exports, ignores .db files)
-
 # ============================================================================
 # Application-Specific Secrets
 # ============================================================================

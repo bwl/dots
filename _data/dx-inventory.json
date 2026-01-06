@@ -14,12 +14,6 @@
       "description": "Lightweight tmux workspace orchestrator"
     },
     {
-      "name": "bd",
-      "category": "dx-tool",
-      "path": ".beads/",
-      "description": "Beads dependency-aware task tracker"
-    },
-    {
       "name": "machine_report",
       "category": "dx-script",
       "path": "bin/machine_report.sh",
@@ -28,25 +22,25 @@
     {
       "name": "icli",
       "category": "ideas-tool",
-      "path": "scripts/ideas/icli/",
+      "path": "~/Developer/li/ideas-cli/",
       "description": "Unified CLI for ideas, projects, plans"
     },
     {
       "name": "ideas-tui",
       "category": "ideas-tool",
-      "path": "scripts/ideas/ideas-tui/",
+      "path": "~/Developer/li/ideas-tui/",
       "description": "TUI for browsing ideas repo"
     },
     {
-      "name": "mq-scripts",
+      "name": "mq",
       "category": "ideas-tool",
-      "path": "scripts/ideas/mq/",
-      "description": "Markdown query scripts for ideas/projects"
+      "path": "~/Developer/li/mq/",
+      "description": "Markdown query tool (jq-like for markdown)"
     },
     {
       "name": "ideas-hooks",
       "category": "ideas-tool",
-      "path": "scripts/ideas/hooks/",
+      "path": "~/Ideas/_scripts/hooks/",
       "description": "Git hooks for ideas repo tracker"
     },
     {
