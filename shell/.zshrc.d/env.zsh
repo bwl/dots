@@ -2,6 +2,9 @@
 # Environment Variables
 # =============================================================================
 
+# Editor
+export EDITOR="fresh"
+
 # Homebrew
 export HOMEBREW_CASK_OPTS="--appdir=$HOME/Applications"
 export HOMEBREW_NO_AUTO_UPDATE=TRUE

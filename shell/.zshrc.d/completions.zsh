@@ -10,6 +10,7 @@ fpath=($HOME/.zfunc $HOME/.docker/completions $fpath)
 (( $+commands[icli] )) && [[ ! -f $HOME/.zfunc/_icli ]] && icli completions zsh > $HOME/.zfunc/_icli 2>/dev/null
 (( $+commands[crush] )) && [[ ! -f $HOME/.zfunc/_crush ]] && crush completion zsh > $HOME/.zfunc/_crush 2>/dev/null
 (( $+commands[cliffy] )) && [[ ! -f $HOME/.zfunc/_cliffy ]] && cliffy completion zsh > $HOME/.zfunc/_cliffy 2>/dev/null
+(( $+commands[karl] )) && [[ ! -f $HOME/.zfunc/_karl ]] && karl completions zsh > $HOME/.zfunc/_karl 2>/dev/null
 
 autoload -Uz compinit
 compinit -C  # Use cached completions if available
