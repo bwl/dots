@@ -4,13 +4,9 @@
 
 
 # --- Appearance ---
-
-# font-family = IosevkaTerm Nerd Font Mono
-# font-family = IosevkaTermSlab Nerd Font Mono
-font-family = GoMono Nerd Font
-
-font-size = 14
-theme = Horizon
+font-family = IosevkaTermSlab Nerd Font Mono
+font-size = 16
+theme = dark:Rose Pine,light:Rose Pine Dawn
 
 # --- Window ---
 window-decoration = true
@@ -18,20 +14,20 @@ window-vsync = false
 window-padding-balance = true
 window-padding-x = 20
 window-padding-y = 20
-window-padding-color = extend
+window-padding-color = background
 # window-save-state = never
 
 macos-window-shadow = true
 macos-non-native-fullscreen = false
 window-colorspace = display-p3
-font-thicken = true
+font-thicken = false
 macos-titlebar-style = hidden
 
 
 # --- Cursor ---
 cursor-style = block
-cursor-style-blink = true
-
+cursor-style-blink = false
+shell-integration-features = no-cursor
 
 # --- Mouse ---
 # Separate multipliers for trackpad (precision) vs mouse wheel (discrete)
