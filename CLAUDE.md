@@ -6,135 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal macOS dotfiles repository with automated setup, Bitwarden CLI secret management, and tmux-based AI agent workspace. Manages 55 Homebrew packages, shell configurations (zsh + Powerlevel10k/Zim), and application configs for development tools. Includes RETRO-OS Phase 0 tools for enhanced tmux session management.
 
-## Task Management with bd
-
-**Critical**: Use `bd` (beads) for ALL task tracking instead of markdown-based TodoWrite tool.
-
-`bd` is a dependency-aware issue tracker designed for AI-supervised workflows. All work should be tracked as issues in the `.beads/` database.
-
-### Core Workflow
-
-**Before starting any work**:
-```bash
-# Check what's ready to work on
-bd ready                    # Shows issues with no blocking dependencies
-
-# Create new issue for work discovered
-bd create "Task description" --priority 0  # P0=highest, P4=lowest
-
-# Show all open work
-bd list --status open
-```
-
-**While working**:
-```bash
-# Mark issue as in-progress when starting
-bd update dotfiles-xxx --status in_progress
-
-# Add dependencies when discovered
-bd dep add dotfiles-xxx dotfiles-yyy  # yyy blocks xxx
-
-# View dependency tree
-bd dep tree dotfiles-xxx
-
-# Close when complete
-bd close dotfiles-xxx --reason "Completed: brief summary"
-```
-
-**Key commands**:
-- `bd create "title"` - Create new issue (auto-assigns sequential hash ID)
-- `bd list` - List all issues (filter: `--status open|in_progress|closed`, `--priority 0-4`)
-- `bd ready` - Show unblocked work ready to claim
-- `bd show dotfiles-xxx` - View issue details
-- `bd update dotfiles-xxx --status STATUS` - Update status (open|in_progress|blocked|closed)
-- `bd dep add BLOCKED BLOCKER` - Add dependency (BLOCKER must complete before BLOCKED)
-- `bd dep tree dotfiles-xxx` - Visualize dependency chain
-- `bd close dotfiles-xxx` - Close issue
-- `bd export -o .beads/beads.jsonl` - Export to JSONL for git sync
-
-### Dependency Types
-
-- `blocks` - Hard blocker (BLOCKER must finish before BLOCKED can proceed)
-- `related` - Soft connection (doesn't block progress)
-- `parent-child` - Hierarchical (epic/subtask)
-- `discovered-from` - Auto-created when AI discovers related work
-
-### AI Agent Integration
-
-`bd` designed for AI-supervised workflows:
-- **Create issues proactively** when discovering new work during exploration
-- **Check `bd ready`** to find next unblocked work to claim
-- **Update status** as you transition between tasks
-- **Add dependencies** to prevent duplicate effort
-- **Use `--json` flags** for programmatic parsing when needed
-
-### Git Integration
-
-Database lives in `.beads/beads.db` (SQLite). Auto-syncs to git via JSONL:
-
-```bash
-# Export before committing (manual for now, hooks coming)
-bd export -o .beads/beads.jsonl
-git add .beads/beads.jsonl
-git commit -m "Sync beads state"
-
-# Import after pulling (auto-detects if JSONL newer than DB)
-# Happens automatically - no action needed
-```
-
-**Note**: Git hooks not yet installed. Run `bd hooks install` to enable automatic sync.
-
-### Database Location
-
-Auto-discovers database in order:
-1. `--db /path/to/db.db` flag
-2. `$BEADS_DB` environment variable
-3. `.beads/*.db` in current directory or ancestors
-4. `~/.beads/default.db` fallback
-
-This repo uses `.beads/beads.db` (already initialized with prefix `dotfiles-`).
-
-### When NOT to Use bd
-
-Use ephemeral TodoWrite tool for:
-- **Single-session throwaway tasks** that don't need git persistence
-- **Very trivial operations** (1-2 steps, completed in seconds)
-- **Exploratory work** before deciding if it becomes real tracked work
-
-For everything else: **create a `bd` issue**.
-
-### Example Session
-
-```bash
-# Check ready work
-bd ready
-
-# Discover new work while exploring
-bd create "Update sketchybar auto-hide documentation" --priority 1
-
-# Start working
-bd update dotfiles-5xy --status in_progress
-
-# Discover dependency
-bd create "Fix cursor bouncer threshold bug" --priority 0
-bd dep add dotfiles-5xy dotfiles-6ab  # 6ab blocks 5xy
-
-# Complete dependency first
-bd update dotfiles-6ab --status in_progress
-# ... do work ...
-bd close dotfiles-6ab --reason "Fixed threshold calculation"
-
-# Now original task is unblocked
-bd ready  # Shows dotfiles-5xy
-# ... finish documentation ...
-bd close dotfiles-5xy --reason "Updated docs with threshold details"
-
-# Export state
-bd export -o .beads/beads.jsonl
-git add .beads/beads.jsonl
-git commit -m "Complete cursor bouncer fixes"
-```
-
 ## Common Commands
 
 ### Setup & Installation
@@ -178,16 +49,16 @@ cat vscode-extensions.txt | xargs -L 1 code --install-extension
 ```bash
 # Launch project-specific tmux session with AI agents
 cd ~/Developer/my-project
-fresh                    # Creates session with claude, codex, cliffy, lazygit, tb windows
+hearth                    # Creates session with claude, codex, cliffy, lazygit, tb windows
 
 # Show tmux context for agents (run inside tmux session)
-fresh explain           # Displays session info, window layout, interaction examples
+hearth explain           # Displays session info, window layout, interaction examples
 
 # Kill current tmux session
-fresh kill
+hearth kill
 ```
 
-The `fresh` command creates a tmux session with:
+The `hearth` command creates a tmux session with:
 - **Window 0 (claude)**: Claude Code CLI
 - **Window 1 (codex)**: Codex CLI for codebase exploration
 - **Window 2 (cliffy)**: Non-interactive LLM task runner
@@ -228,10 +99,6 @@ chmod +x ~/.local/try.rb
 
 ```
 dotfiles/
-├── .beads/             # bd issue tracker database (git-synced via JSONL)
-│   ├── beads.db       # SQLite database (local only)
-│   ├── beads.jsonl    # JSONL export (committed to git)
-│   └── config.yaml    # bd configuration
 ├── .claude/            # Claude Code configuration (symlinked to ~/.claude/)
 │   ├── skills/        # Custom Claude Code skills
 │   │   └── asker/     # AskUserQuestion-based requirement gathering
@@ -257,10 +124,10 @@ dotfiles/
 ├── git/                # .gitconfig + .gitignore_global
 ├── ssh/                # SSH config (NOT keys!)
 ├── vscode/             # VS Code settings.json
-├── bin/                # User scripts (fresh -> tmux-fresh launcher, automux)
+├── bin/                # User scripts (hearth -> hearth launcher, automux)
 ├── scripts/
 │   ├── setup_symlinks.sh         # Symlink management
-│   └── tmux-fresh/               # AI agent tmux workspace
+│   └── hearth/                   # AI agent tmux workspace
 │       ├── start_tmux_homebase.sh  # Main launcher script
 │       ├── agent_profiles.json     # Agent metadata
 │       └── README.md               # User documentation
@@ -280,9 +147,9 @@ dotfiles/
 
 These directories exist in the repo but are not actively used:
 
-- **`claude-thoughts/`** - Archive of tmux multiplexer analysis (12 markdown files, ~176KB). Historical exploration from tmux-fresh development. Read-only reference.
+- **`claude-thoughts/`** - Archive of tmux multiplexer analysis (12 markdown files, ~176KB). Historical exploration from hearth development. Read-only reference.
 
-- **`.taskbook/`** - Legacy taskbook data from before migration to `bd` (beads). Can be safely ignored.
+- **`.taskbook/`** - Legacy taskbook data. Can be safely ignored.
 
 - **`wiki/`** - GitHub wiki content (gitignored). Maintained separately in GitHub wiki. Local copy for offline reference only.
 
@@ -341,13 +208,6 @@ Use `--force` flag to backup existing files before replacing. Backups stored in 
 - `.env` files
 - Bitwarden session keys
 
-### bd Database Management
-
-**Important**: The `.beads/` directory contains both local and git-tracked files:
-- **DO commit**: `beads.jsonl` (JSONL export for git sync)
-- **DO NOT commit**: `beads.db` (local SQLite database - auto-generated from JSONL)
-- `.beads/.gitignore` handles this automatically
-
 Secrets are referenced in shell configs via:
 ```bash
 export MY_API_KEY="$(bw get notes 'Secret Name')"
@@ -356,15 +216,15 @@ export MY_API_KEY="$(bw get notes 'Secret Name')"
 Current secrets to migrate (see `shell/.zshenv`):
 - `CLIFFY_OPENROUTER_API_KEY` - should be moved to Bitwarden
 
-### Tmux Fresh Architecture
+### Hearth Architecture
 
-The `fresh` command (`~/bin/fresh` → `scripts/tmux-fresh/start_tmux_homebase.sh`):
+The `hearth` command (`~/bin/hearth` → `scripts/hearth/start_tmux_homebase.sh`):
 
 1. **Session naming**: Derives from current directory name (sanitized for tmux)
 2. **Window creation**: Creates 5 windows (claude, codex, cliffy, git, tasks) in project dir
 3. **Layout management**: Windows 0-3 split with agent (70%) + tasks sidebar (30%)
 4. **Task integration**: Right pane auto-refreshes `tb` output every 2s with color preservation (`unbuffer`)
-5. **Context awareness**: `fresh explain` shows tmux context, agent profiles, window list, interaction examples
+5. **Context awareness**: `hearth explain` shows tmux context, agent profiles, window list, interaction examples
 
 Agent profiles stored in `agent_profiles.json` define each window's purpose, model, and role.
 
@@ -495,7 +355,6 @@ Custom skills extend Claude Code's capabilities. Managed in `.claude/skills/` (s
 - **Git UIs**: lazygit (TUI), tig, gh (CLI)
 - **Monitoring**: htop, mactop, procs, ncdu
 - **AI tools**: qwen-code, opencode, specify, crush
-- **Task tracking**: bd (beads) - dependency-aware issue tracker
 - **Task runners**: go-task, just
 - **Language managers**: pyenv-virtualenv, uv (Python), bun (JavaScript), rust
 - **Tmux enhancement (RETRO-OS Phase 0)**:

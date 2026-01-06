@@ -314,28 +314,6 @@ cmd_init() {
     log_info "Git repository already initialized"
   fi
 
-  # Initialize bd (beads) if not already initialized
-  if [[ ! -d "$PROJECT_DIR/.beads" ]]; then
-    log_info "Initializing bd (beads) tracker..."
-    if (cd "$PROJECT_DIR" && bd init --quiet --skip-merge-driver >/dev/null 2>&1); then
-      log_success "  Beads tracker initialized"
-
-      # Install git hooks for bd sync
-      if [[ -d "$PROJECT_DIR/.git" ]]; then
-        log_info "  Installing bd git hooks..."
-        if (cd "$PROJECT_DIR" && bd hooks install >/dev/null 2>&1); then
-          log_success "  Git hooks installed"
-        else
-          log_warn "  Failed to install git hooks"
-        fi
-      fi
-    else
-      log_warn "  Failed to initialize beads tracker"
-    fi
-  else
-    log_info "Beads tracker already initialized"
-  fi
-
   # Create CLAUDE.md if it doesn't exist
   if [[ ! -f "$PROJECT_DIR/CLAUDE.md" ]]; then
     log_info "Creating CLAUDE.md starter profile..."
@@ -387,76 +365,17 @@ You excel at:
 - **Learn continuously**: Every project teaches something new
 - **Communicate clearly**: Code is read more than written
 
-## Issue Tracking with BD (Beads)
-
-This project uses `bd` (beads) for issue tracking with **first-class dependency support**. Issues are chained together like beads, creating a clear dependency graph.
-
-### Core BD Workflow
-
-```bash
-# Create issues as you identify work
-bd create "Set up project structure"
-bd create "Design API schema"
-bd create "Implement authentication"
-
-# Add dependencies (blocks/blocked-by relationships)
-bd dep add 2 --blocks 3    # Issue 2 blocks issue 3
-bd dep add 1 --blocks 2    # Issue 1 blocks issue 2
-
-# See what's ready to work on (no blockers)
-bd ready
-
-# Show blocked items
-bd blocked
-
-# Update issue status
-bd update 1 --status in-progress
-bd close 1
-
-# View dependency graph
-bd show 3  # Shows all dependencies and blockers
-```
-
-### Best Practices for BD
-
-- **Break down work**: Create small, focused issues rather than large epics
-- **Express dependencies**: Use `bd dep add` to show what blocks what
-- **Track architectural decisions**: Create issues for "Decide on X" or "Research Y"
-- **Document blockers**: If something is blocked, make it explicit with dependencies
-- **Use labels**: Organize with labels like `architecture`, `research`, `bug`, `feature`
-- **Check ready work**: Run `bd ready` frequently to see what can be worked on now
-- **Sync with git**: BD hooks automatically sync issues with commits
-
-### BD for Architecture Exploration
-
-When exploring architectural options:
-
-1. Create an issue: `bd create "Research database options for time-series data"`
-2. Add comments as you research: `bd comment 1 "PostgreSQL with TimescaleDB looks promising"`
-3. Create dependent issues: `bd create "Prototype TimescaleDB integration" && bd dep add 1 --blocks 2`
-4. Close research issue when decision is made: `bd close 1`
-
-### BD Tips
-
-- Issues are stored in `.beads/` and tracked in git
-- Git hooks keep JSONL files in sync automatically
-- Use `bd list` to see all issues
-- Use `bd stats` to see project overview
-- Use `bd show <id>` to see full issue details with dependencies
-
 ## Project Stage
 
 This project is in the **early exploration phase**. The CLAUDE.md file will evolve as the project matures and domain-specific patterns emerge. For now, your role is to help navigate from inspiration to initial implementation with sound architectural foundations.
 
 ## Working Together
 
-- Use `bd` proactively to track architectural decisions, technical debt, and implementation tasks
-- Break complex problems into manageable issues with clear dependency chains
 - Propose experiments when the best path forward is unclear
 - Document "why" not just "what" in code and commit messages
-- Keep the dependency graph clean - update blockers as work progresses
+- Break complex problems into manageable steps
 
-Let's build something great! 🚀
+Let's build something great!
 EOF
     log_success "  CLAUDE.md created"
   else
@@ -473,17 +392,11 @@ EOF
   "model": "sonnet",
   "alwaysThinkingEnabled": true,
   "includeCoAuthoredBy": false,
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline-with-bd.sh"
-  },
   "companyAnnouncements": [
-    "🌱 New Project - Let's explore! Use bd to track ideas and architecture decisions as we build."
+    "🌱 New Project - Let's explore and build something great!"
   ],
   "permissions": {
-    "allow": [
-      "Bash(bd:*)"
-    ],
+    "allow": [],
     "deny": [],
     "ask": []
   }

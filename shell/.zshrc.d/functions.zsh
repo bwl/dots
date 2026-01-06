@@ -42,12 +42,6 @@ git() {
 # codex_safe - Run codex with confirmation before executing
 codex_safe() {
   cmd="$(codex "$@" | tee /dev/tty)"
-  base="${cmd%% *}"
-
-  if [[ "$base" == "bd" ]]; then
-    eval "$cmd"
-  else
-    read -r -p "Run this command? [y/N] " resp
-    [[ "$resp" == "y" ]] && eval "$cmd"
-  fi
+  read -r -p "Run this command? [y/N] " resp
+  [[ "$resp" == "y" ]] && eval "$cmd"
 }
