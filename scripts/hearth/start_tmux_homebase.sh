@@ -6,12 +6,12 @@ set -euo pipefail
 #
 # Usage:
 #   cd /path/to/my-project
-#   fresh                    # Launch tuios in current directory
-#   fresh machine            # Show machine report (static snapshot)
-#   fresh machine live       # Show live updating machine report
-#   fresh machine mock       # Show machine report with mock data
-#   fresh machine mock live  # Show live updating mock report
-#   fresh --help             # Show tuios help
+#   hearth                    # Launch tuios in current directory
+#   hearth machine            # Show machine report (static snapshot)
+#   hearth machine live       # Show live updating machine report
+#   hearth machine mock       # Show machine report with mock data
+#   hearth machine mock live  # Show live updating mock report
+#   hearth --help             # Show tuios help
 #
 # Note: For tmux-based sessions, use the 'leaf' command instead.
 
@@ -35,7 +35,7 @@ if [[ $# -ge 1 && "$1" == "machine" ]]; then
         ;;
       *)
         echo "Unknown machine subcommand: $arg" >&2
-        echo "Usage: fresh machine [live] [mock]" >&2
+        echo "Usage: hearth machine [live] [mock]" >&2
         exit 1
         ;;
     esac

@@ -1,10 +1,10 @@
 # Setup Home Base
 
-This workspace provides the `fresh` command - a project-specific tmux session launcher for AI coding assistants. Run `fresh` from any project directory to spawn Claude Code, Codex, and tb in that project's context.
+This workspace provides the `hearth` command - a project-specific tmux session launcher for AI coding assistants. Run `hearth` from any project directory to spawn Claude Code, Codex, and tb in that project's context.
 
 ## Installation
 
-The `fresh` command is installed globally at `~/bin/fresh` (already in your PATH).
+The `hearth` command is installed globally at `~/bin/hearth` (already in your PATH).
 
 ## Quick Start
 
@@ -13,16 +13,16 @@ The `fresh` command is installed globally at `~/bin/fresh` (already in your PATH
 cd ~/Developer/my-project
 
 # Launch AI assistants and enter the session
-fresh
+hearth
 
-# You're now in the session! Run 'fresh' in this directory again to rejoin.
+# You're now in the session! Run 'hearth' in this directory again to rejoin.
 ```
 
 **Note:** For a context-efficient single-window alternative, see the standalone `leaf` command (`~/dotfiles/scripts/leaf/README.md`).
 
 ## What You Get
 
-Each `fresh` session creates five windows in your project directory:
+Each `hearth` session creates five windows in your project directory:
 - **claude** (0) - Claude Code CLI for AI-assisted coding
 - **codex** (1) - Codex CLI for codebase exploration and analysis
 - **cliffy** (2) - Non-interactive LLM task runner with CLI interface
@@ -35,7 +35,7 @@ All windows start in the project directory, so all agents work in your project's
 
 Agent windows (claude, codex, cliffy, git) include a **tasks sidebar** on the right:
 - **Left pane (70%)**: The agent/tool interface where you interact
-- **Right pane (30%)**: Auto-refreshing task list (updates every 2 seconds)
+- **Right pane (30%)**: Auto-rehearthing task list (updates every 2 seconds)
 
 The tasks window itself is full-screen for detailed task management. Switch between windows with:
 - `Ctrl-b n` - next window
@@ -46,17 +46,17 @@ The tasks window itself is full-screen for detailed task management. Switch betw
 
 ```bash
 # Each project directory gets its own session
-cd ~/work/api && fresh        # Creates/joins 'api' session
-cd ~/personal/website && fresh # Creates/joins 'website' session
+cd ~/work/api && hearth        # Creates/joins 'api' session
+cd ~/personal/website && hearth # Creates/joins 'website' session
 
 # List all sessions
 tmux ls
 
 # Return to a project session from anywhere
-cd ~/work/api && fresh        # Back to 'api' session
+cd ~/work/api && hearth        # Back to 'api' session
 
 # Kill the current session
-fresh kill                    # Kills current session and exits tmux
+hearth kill                    # Kills current session and exits tmux
 
 # Or detach with Ctrl-b then d to keep agents running in the background
 ```
@@ -66,7 +66,7 @@ fresh kill                    # Kills current session and exits tmux
 When running inside a tmux session, agents can discover their context:
 
 ```bash
-fresh explain
+hearth explain
 ```
 
 This shows:
@@ -76,7 +76,7 @@ This shows:
 - Code examples for sending commands to other panes
 - Code examples for reading output from other panes
 
-Agents should run `fresh explain` to understand their tmux environment before attempting to interact with other windows.
+Agents should run `hearth explain` to understand their tmux environment before attempting to interact with other windows.
 
 ## Customization
 
