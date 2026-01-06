@@ -16,7 +16,7 @@ PLUGIN_DIR="$HOME/.config/sketchybar/plugins"
 
 sketchybar --bar \
     position=top \
-    height=32 \
+    height=48 \
     blur_radius=0 \
     color=$BAR_COLOR \
     padding_left=12 \
@@ -133,6 +133,21 @@ sketchybar --add event cpu_update \
            --subscribe cpu.core0 cpu_update \
            --set cpu.core0 update_freq=10 \
                     script="$PLUGIN_DIR/cpu.sh"
+
+# ============================================================================
+# Display Position Detection
+# ============================================================================
+
+# Add custom events for display configuration changes
+sketchybar --add event display_external_primary \
+           --add event display_builtin_primary
+
+# Add hidden item to handle display position events
+sketchybar --add item display_position_trigger left \
+           --set display_position_trigger \
+                 drawing=off \
+                 script="$PLUGIN_DIR/display_position.sh" \
+           --subscribe display_position_trigger display_external_primary display_builtin_primary
 
 # ============================================================================
 # Auto-Hide Functionality

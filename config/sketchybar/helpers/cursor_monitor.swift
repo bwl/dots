@@ -7,13 +7,16 @@ import AppKit
 // Configuration
 // NOTE: These values are tuned for MacBook Air at 1710x1112 resolution
 // May need adjustment for different display resolutions/DPI settings
-// TODO: Consider dynamic resolution detection for multi-display setups
 let topEdgeThreshold: CGFloat = 3.0         // Hide bar when cursor within 3px of top (tight)
 let bottomEdgeActiveThreshold: CGFloat = 44.0  // Show bar when cursor moves below 44px from top (loose)
 let bouncerThreshold: CGFloat = 5.0         // Prevent cursor from entering top 5px (bouncer)
 let bounceTargetOffset: CGFloat = 6.0       // Where to bounce cursor back to (6px from top)
 let pollInterval: TimeInterval = 0.1
 let sketchybarPath = "/opt/homebrew/bin/sketchybar"
+
+// Display detection state
+// When external monitor is primary, bar moves to bottom and auto-hide/bouncer are disabled
+var barPosition: String = "top"  // "top" or "bottom"
 
 func getCursorPosition() -> NSPoint {
     return NSEvent.mouseLocation
@@ -110,12 +113,65 @@ func bounceCursor(currentPos: NSPoint, screenTop: CGFloat) {
     CGWarpMouseCursorPosition(newPos)
 }
 
+// ============================================================================
+// Display Configuration Detection
+// ============================================================================
+
+func isExternalDisplayPrimary() -> Bool {
+    // Check if the main (primary) display is external (not built-in)
+    // Returns true when external monitor is primary (clamshell mode or external set as main)
+    let mainDisplayID = CGMainDisplayID()
+    return CGDisplayIsBuiltin(mainDisplayID) == 0
+}
+
+func checkAndUpdateDisplayConfiguration() {
+    let externalIsPrimary = isExternalDisplayPrimary()
+    let newPosition = externalIsPrimary ? "bottom" : "top"
+
+    if newPosition != barPosition {
+        barPosition = newPosition
+        if externalIsPrimary {
+            triggerSketchyBarEvent("display_external_primary")
+            fputs("Display: External monitor is primary - bar moves to bottom\n", stderr)
+        } else {
+            triggerSketchyBarEvent("display_builtin_primary")
+            fputs("Display: Built-in display is primary - bar moves to top\n", stderr)
+        }
+    }
+}
+
+// Display reconfiguration callback
+// Called by macOS when display configuration changes (monitor connect/disconnect, primary change)
+func displayReconfigurationCallback(
+    display: CGDirectDisplayID,
+    flags: CGDisplayChangeSummaryFlags,
+    userInfo: UnsafeMutableRawPointer?
+) {
+    // Only respond to meaningful configuration changes
+    // BeginConfigurationFlag indicates the START of a change, we wait for completion
+    if flags.contains(.beginConfigurationFlag) {
+        return
+    }
+
+    // Debounce: wait a moment for display list to stabilize
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        checkAndUpdateDisplayConfiguration()
+    }
+}
+
 // Check accessibility permissions on startup
 let hasAccessibilityPermissions = checkAccessibilityPermissions()
 if !hasAccessibilityPermissions {
     fputs("Warning: Accessibility permissions not granted. Cursor bouncer disabled.\n", stderr)
     fputs("Grant permissions in System Settings > Privacy & Security > Accessibility\n", stderr)
 }
+
+// Register display reconfiguration callback
+CGDisplayRegisterReconfigurationCallback(displayReconfigurationCallback, nil)
+fputs("Display monitor: Registered for configuration changes\n", stderr)
+
+// Check initial display configuration and trigger appropriate event
+checkAndUpdateDisplayConfiguration()
 
 // Main monitoring loop with hysteresis and cursor bouncer
 var barIsHidden = false
@@ -124,6 +180,13 @@ while true {
     let cursorPos = getCursorPosition()
     let screenTop = getScreenTop()
     let distanceFromTop = screenTop - cursorPos.y
+
+    // Skip bouncer and auto-hide when bar is at bottom (external monitor primary)
+    // In this mode, there's no conflict with macOS menu bar
+    if barPosition == "bottom" {
+        Thread.sleep(forTimeInterval: pollInterval)
+        continue
+    }
 
     // BOUNCER: Prevent cursor from entering top zone unless Command is held
     // This runs BEFORE auto-hide logic to prevent accidental menu bar access
