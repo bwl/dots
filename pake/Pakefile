@@ -1,0 +1,8 @@
+# Pakefile - Pake app definitions
+# Format: pake "URL" "Name" [options]
+#
+# Build all:  ./build.sh
+# Build one:  ./build.sh --app X
+
+pake "https://x.com" "X" --width 1200 --height 800 --hide-title-bar
+pake "https://github.com" "GitHub" --width 1400 --height 900

@@ -124,6 +124,7 @@ dotfiles/
 ├── git/                # .gitconfig + .gitignore_global
 ├── ssh/                # SSH config (NOT keys!)
 ├── vscode/             # VS Code settings.json
+├── pake/               # Pake desktop app wrappers (X, GitHub)
 ├── bin/                # User scripts (hearth -> hearth launcher, automux)
 ├── scripts/
 │   ├── setup_symlinks.sh         # Symlink management
@@ -344,6 +345,38 @@ Custom skills extend Claude Code's capabilities. Managed in `.claude/skills/` (s
 - Use `allowed-tools` to restrict capabilities when appropriate
 - Add supporting files for examples, templates, reference docs
 - Test by triggering relevant use cases in Claude Code
+
+### Pake Desktop App Wrappers
+
+[Pake](https://github.com/tw93/Pake) wraps websites into lightweight native desktop apps using Rust/Tauri.
+
+**Location**: `pake/`
+
+**Structure**:
+- `Pakefile` - App manifest (Brewfile-style)
+- `build.sh` - Build script
+- `lib/harness.js` - Shared inject code
+- `apps/<domain>/` - Per-site inject files (JS/CSS)
+
+**Commands**:
+```bash
+# Build all apps
+cd ~/dotfiles/pake && ./build.sh
+
+# Build single app
+./build.sh --app X
+./build.sh --app GitHub
+```
+
+**Current apps**:
+- **X** (`x.com`) - Twitter/X desktop wrapper
+- **GitHub** (`github.com`) - GitHub desktop wrapper
+
+**Adding apps**: Edit `Pakefile`, optionally create `apps/<domain>/inject.{js,css}`, run build.
+
+**Output**: `~/Applications/Pake/`
+
+**Requirements**: `npm install -g pake-cli`, Rust toolchain
 
 ## Development Notes
 
