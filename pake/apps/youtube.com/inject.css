@@ -1,0 +1,79 @@
+/* YouTube - Hide Shorts */
+
+/* Shorts in feeds (grid view) */
+#items.ytd-grid-renderer>ytd-grid-video-renderer:has([overlay-style="SHORTS"]) {
+  display: none;
+}
+
+/* Shorts in feeds (list view) */
+ytd-item-section-renderer:not(:has(ytd-grid-renderer)):has([overlay-style="SHORTS"]) {
+  display: none;
+}
+
+/* Shorts shelf/section on homepage and search */
+ytd-reel-shelf-renderer {
+  display: none;
+}
+
+/* Shorts tab in sidebar navigation */
+[tab-title="Shorts"],
+[title="Shorts"],
+ytd-guide-entry-renderer:has(a[title="Shorts"]),
+ytd-mini-guide-entry-renderer:has(a[title="Shorts"]) {
+  display: none;
+}
+
+/* Shorts markers and badges */
+[is-shorts],
+[aria-label="Shorts"] {
+  display: none;
+}
+
+/* ============================================ */
+/* AD HIDING (banners, overlays, not video ads) */
+/* ============================================ */
+
+/* Masthead/banner ads */
+#masthead-ad,
+#player-ads,
+#panels > ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
+ytd-ad-slot-renderer,
+ytd-in-feed-ad-layout-renderer,
+ytd-banner-promo-renderer,
+ytd-statement-banner-renderer,
+ytd-mealbar-promo-renderer {
+  display: none !important;
+}
+
+/* Companion ads (sidebar) */
+#companion,
+#player-container .ytp-ad-overlay-container,
+.ytp-ad-overlay-slot {
+  display: none !important;
+}
+
+/* Promoted videos in search/feeds */
+ytd-promoted-sparkles-web-renderer,
+ytd-display-ad-renderer,
+ytd-promoted-video-renderer {
+  display: none !important;
+}
+
+/* Ad badges */
+.ytd-badge-supported-renderer:has-text("Ad"),
+[aria-label="Ad"],
+.ytp-ad-badge {
+  display: none !important;
+}
+
+/* Premium upsell prompts */
+ytd-popup-container:has(tp-yt-paper-dialog:has([id*="premium"])),
+tp-yt-paper-dialog:has(yt-upsell-dialog-renderer),
+ytd-mealbar-promo-renderer {
+  display: none !important;
+}
+
+/* Survey prompts */
+.ytp-ad-survey {
+  display: none !important;
+}

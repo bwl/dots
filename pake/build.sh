@@ -60,10 +60,19 @@ build_app() {
   echo "  pake $url --name $name --inject $inject_str ${opts[*]:-}"
   pake "$url" --name "$name" --inject "$inject_str" "${opts[@]:-}"
 
-  # Move to output directory
-  if [[ -f "${name}.app" ]]; then
-    mv "${name}.app" "$OUTPUT_DIR/"
-    echo "  -> $OUTPUT_DIR/${name}.app"
+  # Extract app from DMG and move to output directory
+  local dmg_file="$SCRIPT_DIR/${name}.dmg"
+  if [[ -f "$dmg_file" ]]; then
+    echo "  Extracting from DMG..."
+    local mount_point="/Volumes/$name"
+    hdiutil attach "$dmg_file" -nobrowse -quiet
+    if [[ -d "$mount_point/${name}.app" ]]; then
+      rm -rf "$OUTPUT_DIR/${name}.app"
+      cp -R "$mount_point/${name}.app" "$OUTPUT_DIR/"
+      echo "  -> $OUTPUT_DIR/${name}.app"
+    fi
+    hdiutil detach "$mount_point" -quiet
+    rm -f "$dmg_file"
   elif [[ -d "${name}.app" ]]; then
     rm -rf "$OUTPUT_DIR/${name}.app"
     mv "${name}.app" "$OUTPUT_DIR/"

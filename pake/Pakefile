@@ -6,3 +6,4 @@
 
 pake "https://x.com" "X" --width 1200 --height 800 --hide-title-bar
 pake "https://github.com" "GitHub" --width 1400 --height 900
+pake "https://youtube.com" "YouTube" --width 1400 --height 900 --hide-title-bar
