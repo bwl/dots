@@ -44,28 +44,17 @@ go install github.com/joshmedeski/sesh@latest
 cat vscode-extensions.txt | xargs -L 1 code --install-extension
 ```
 
-### Tmux AI Workspace
+### Hearth (tmux + Claude)
 
 ```bash
-# Launch project-specific tmux session with AI agents
 cd ~/Developer/my-project
-hearth                    # Creates session with claude, codex, cliffy, lazygit, tb windows
-
-# Show tmux context for agents (run inside tmux session)
-hearth explain           # Displays session info, window layout, interaction examples
-
-# Kill current tmux session
-hearth kill
+hearth              # Start tmux session with claude (enables canvas)
+hearth --help       # Show help
 ```
 
-The `hearth` command creates a tmux session with:
-- **Window 0 (claude)**: Claude Code CLI
-- **Window 1 (codex)**: Codex CLI for codebase exploration
-- **Window 2 (cliffy)**: Non-interactive LLM task runner
-- **Window 3 (git)**: Lazygit TUI
-- **Window 4 (tasks)**: Taskbook (tb) for project workflows
-
-Agent windows (0-3) include a 30% right sidebar with auto-refreshing task list.
+Creates tmux session named after current directory, runs Claude Code inside.
+Enables claude-canvas skill (requires tmux for split panes, Bun for canvas CLI).
+If already in tmux, just runs claude directly.
 
 ### Experiment Directory Management (Try)
 
@@ -125,13 +114,9 @@ dotfiles/
 ├── ssh/                # SSH config (NOT keys!)
 ├── vscode/             # VS Code settings.json
 ├── pake/               # Pake desktop app wrappers (X, GitHub)
-├── bin/                # User scripts (hearth -> hearth launcher, automux)
+├── bin/                # User scripts (hearth, automux)
 ├── scripts/
-│   ├── setup_symlinks.sh         # Symlink management
-│   └── hearth/                   # AI agent tmux workspace
-│       ├── start_tmux_homebase.sh  # Main launcher script
-│       ├── agent_profiles.json     # Agent metadata
-│       └── README.md               # User documentation
+│   └── setup_symlinks.sh         # Symlink management
 ├── app-configs/        # Non-XDG app configs (Syncthing, Obsidian notes)
 ├── docs/               # Documentation (tmux guides, enhancements)
 ├── Brewfile            # Homebrew packages (55 formulae)
@@ -217,17 +202,14 @@ export MY_API_KEY="$(bw get notes 'Secret Name')"
 Current secrets to migrate (see `shell/.zshenv`):
 - `CLIFFY_OPENROUTER_API_KEY` - should be moved to Bitwarden
 
-### Hearth Architecture
+### Hearth
 
-The `hearth` command (`~/bin/hearth` → `scripts/hearth/start_tmux_homebase.sh`):
+Simple tmux wrapper (`~/bin/hearth`) for running Claude Code with canvas support:
 
-1. **Session naming**: Derives from current directory name (sanitized for tmux)
-2. **Window creation**: Creates 5 windows (claude, codex, cliffy, git, tasks) in project dir
-3. **Layout management**: Windows 0-3 split with agent (70%) + tasks sidebar (30%)
-4. **Task integration**: Right pane auto-refreshes `tb` output every 2s with color preservation (`unbuffer`)
-5. **Context awareness**: `hearth explain` shows tmux context, agent profiles, window list, interaction examples
-
-Agent profiles stored in `agent_profiles.json` define each window's purpose, model, and role.
+1. **Session naming**: Derives from current directory (sanitized: `.` and ` ` → `_`)
+2. **Attach or create**: Attaches to existing session, or creates new one running claude
+3. **Canvas enablement**: tmux provides split-pane capability for claude-canvas skill
+4. **Passthrough**: If already in tmux, just runs claude directly
 
 ### SketchyBar Configuration
 

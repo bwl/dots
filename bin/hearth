@@ -1,1 +1,48 @@
-../scripts/hearth/start_tmux_homebase.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Simple tmux wrapper for running Claude Code with canvas support.
+# Creates a tmux session named after current directory and runs claude.
+#
+# Usage:
+#   cd /path/to/project
+#   hearth              # Start/attach tmux session with claude
+#   hearth --help       # Show help
+#
+# Canvas requirements (already configured):
+#   - tmux with mouse support (set -g mouse on)
+#   - Bun installed for canvas CLI
+
+show_help() {
+  cat <<EOF
+hearth - tmux wrapper for Claude Code with canvas support
+
+Usage:
+  hearth              Start/attach tmux session with claude
+  hearth --help       Show this help
+
+The session name is derived from the current directory.
+Canvas features require tmux (for split panes) and Bun.
+EOF
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  show_help
+  exit 0
+fi
+
+# Session name from current directory (sanitized for tmux)
+SESSION_NAME=$(basename "$PWD" | tr '.' '_' | tr ' ' '_')
+
+# If already in tmux, just run claude
+if [[ -n "${TMUX:-}" ]]; then
+  exec claude
+fi
+
+# If session exists, attach to it
+if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+  exec tmux attach-session -t "$SESSION_NAME"
+fi
+
+# Create new session with claude
+exec tmux new-session -s "$SESSION_NAME" -c "$PWD" claude
