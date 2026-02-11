@@ -12,8 +12,7 @@ fpath=($HOME/.zfunc $HOME/.docker/completions $fpath)
 (( $+commands[cliffy] )) && [[ ! -f $HOME/.zfunc/_cliffy ]] && cliffy completion zsh > $HOME/.zfunc/_cliffy 2>/dev/null
 (( $+commands[karl] )) && [[ ! -f $HOME/.zfunc/_karl ]] && karl completions zsh > $HOME/.zfunc/_karl 2>/dev/null
 
+source "/opt/homebrew/opt/fzf-tab/share/fzf-tab/fzf-tab.zsh"
+
 autoload -Uz compinit
 compinit -C  # Use cached completions if available
-
-# BEX completions (if available)
-[[ -f $HOME/.bex-completion.zsh ]] && source $HOME/.bex-completion.zsh

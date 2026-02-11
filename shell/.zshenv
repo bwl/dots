@@ -13,6 +13,7 @@ export PATH="/opt/homebrew/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
+export PATH="$HOME/Applications/Obsidian.app/Contents/MacOS:$PATH"
 
 # =============================================================================
 # Secrets Management
