@@ -16,7 +16,7 @@
 # a minimal config is loaded instead (no prompt, faster startup).
 
 # Get the directory where this .zshrc file actually lives
-# This resolves symlinks so we can source configs from the dotfiles directory
+# This resolves symlinks so we can source configs from the dots directory
 ZSHRC_DIR="${${(%):-%x}:A:h}"
 
 # =============================================================================
@@ -36,7 +36,8 @@ if [[ -n "$CLAUDECODE" ]] || [[ -n "$CLAUDE_CODE_SESSION" ]]; then
   SAVEHIST=10000000
 
   # Essential PATH
-  export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+  [[ "$(uname)" == "Darwin" ]] && export PATH="/opt/homebrew/bin:$PATH"
+  export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$HOME/bin:$HOME/.bun/bin:$PATH"
   export GOPATH="${GOPATH:-$HOME/go}"
   export PATH="$GOPATH/bin:$PATH"
 
@@ -72,4 +73,17 @@ done
 # Powerlevel10k Theme
 # =============================================================================
 
+# =============================================================================
+# Machine-Local Overrides
+# =============================================================================
+
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# =============================================================================
+# Powerlevel10k Theme
+# =============================================================================
+
 [[ -f "$ZSHRC_DIR/.p10k.zsh" ]] && source "$ZSHRC_DIR/.p10k.zsh"
+
+# To customize prompt, run `p10k configure` or edit ~/dots/shell/.p10k.zsh.
+[[ ! -f ~/dots/shell/.p10k.zsh ]] || source ~/dots/shell/.p10k.zsh

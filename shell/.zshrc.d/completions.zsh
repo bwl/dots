@@ -12,7 +12,12 @@ fpath=($HOME/.zfunc $HOME/.docker/completions $fpath)
 (( $+commands[cliffy] )) && [[ ! -f $HOME/.zfunc/_cliffy ]] && cliffy completion zsh > $HOME/.zfunc/_cliffy 2>/dev/null
 (( $+commands[karl] )) && [[ ! -f $HOME/.zfunc/_karl ]] && karl completions zsh > $HOME/.zfunc/_karl 2>/dev/null
 
-source "/opt/homebrew/opt/fzf-tab/share/fzf-tab/fzf-tab.zsh"
+# fzf-tab (platform-aware paths)
+if [[ -f "/opt/homebrew/opt/fzf-tab/share/fzf-tab/fzf-tab.zsh" ]]; then
+  source "/opt/homebrew/opt/fzf-tab/share/fzf-tab/fzf-tab.zsh"
+elif [[ -f "/usr/share/zsh/plugins/fzf-tab/fzf-tab.zsh" ]]; then
+  source "/usr/share/zsh/plugins/fzf-tab/fzf-tab.zsh"
+fi
 
-autoload -Uz compinit
-compinit -C  # Use cached completions if available
+# compinit is handled by Zim's completion module (in core.zsh)
+# after all fpath entries are registered

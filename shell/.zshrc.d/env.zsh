@@ -3,11 +3,13 @@
 # =============================================================================
 
 # Editor
-export EDITOR="fresh"
+export EDITOR="nvim"
 
-# Homebrew
-export HOMEBREW_CASK_OPTS="--appdir=$HOME/Applications"
-export HOMEBREW_NO_AUTO_UPDATE=TRUE
+# Homebrew (macOS only)
+if [[ "$(uname)" == "Darwin" ]]; then
+  export HOMEBREW_CASK_OPTS="--appdir=$HOME/Applications"
+  export HOMEBREW_NO_AUTO_UPDATE=TRUE
+fi
 
 # Go
 export GOPATH=$HOME/go

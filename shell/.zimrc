@@ -1,0 +1,23 @@
+# =============================================================================
+# Zim Framework Modules
+# =============================================================================
+
+# Core modules
+zmodule environment
+zmodule input
+
+# Prompt
+zmodule romkatv/powerlevel10k --use degit
+
+# Completions
+zmodule zsh-users/zsh-completions --fpath src
+zmodule completion
+
+# Substring search (must be before syntax-highlighting)
+zmodule zsh-users/zsh-history-substring-search
+
+# Autosuggestions
+zmodule zsh-users/zsh-autosuggestions
+
+# Syntax highlighting (must be sourced last)
+zmodule zsh-users/zsh-syntax-highlighting

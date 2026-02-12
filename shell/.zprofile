@@ -1,5 +1,8 @@
+# =============================================================================
+# .zprofile - Login Shell Setup
+# =============================================================================
 
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
-# Created by `pipx` on 2024-10-09 14:50:24
-export PATH="$PATH:/Users/bwl/.local/bin"
+# Homebrew shell environment (macOS only)
+if command -v brew &>/dev/null; then
+  eval "$(brew shellenv)"
+fi

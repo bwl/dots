@@ -4,13 +4,16 @@
 # Note: .zshenv handles basic PATH for non-interactive shells
 # This file ensures interactive shells have all paths
 
+if [[ "$(uname)" == "Darwin" ]]; then
+  export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
+  export PATH="/opt/homebrew/bin:$PATH"
+  export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+fi
 
-export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
-export PATH="/opt/homebrew/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
-export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+export PATH="$HOME/.bun/bin:$PATH"
 
 # Go
 export GOPATH="${GOPATH:-$HOME/go}"

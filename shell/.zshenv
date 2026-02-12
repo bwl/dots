@@ -9,15 +9,14 @@
 # =============================================================================
 # Scripts and non-interactive shells need basic PATH to find tools
 
-export PATH="/opt/homebrew/bin:$PATH"
+[[ "$(uname)" == "Darwin" ]] && export PATH="/opt/homebrew/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
-export PATH="$HOME/Applications/Obsidian.app/Contents/MacOS:$PATH"
 
 # =============================================================================
 # Secrets Management
 # =============================================================================
 
 # Source local secrets file if it exists (not tracked in git)
-[[ -f "$HOME/dotfiles/shell/.zshenv-secrets" ]] && source "$HOME/dotfiles/shell/.zshenv-secrets"
+[[ -f "$HOME/dots/shell/.zshenv-secrets" ]] && source "$HOME/dots/shell/.zshenv-secrets"
