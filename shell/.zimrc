@@ -5,6 +5,7 @@
 # Core modules
 zmodule environment
 zmodule input
+zmodule termtitle
 
 # Prompt
 zmodule romkatv/powerlevel10k --use degit
@@ -19,6 +20,9 @@ zmodule zsh-users/zsh-history-substring-search
 
 # Autosuggestions
 zmodule zsh-users/zsh-autosuggestions
+
+# Autopair (auto-close quotes/brackets)
+zmodule hlissner/zsh-autopair
 
 # Syntax highlighting (must be sourced last)
 zmodule zsh-users/zsh-syntax-highlighting

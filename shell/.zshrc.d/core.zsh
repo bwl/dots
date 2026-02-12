@@ -2,19 +2,23 @@
 # Core Zsh Configuration
 # =============================================================================
 # Essential shell behavior: history, keybindings, Zim framework
+#
+# Note: The Zim `environment` module sets these options (not duplicated here):
+#   SHARE_HISTORY, HIST_IGNORE_DUPS, HIST_IGNORE_SPACE, HIST_VERIFY,
+#   AUTO_CD, AUTO_PUSHD, EXTENDED_GLOB, NO_CLOBBER, INTERACTIVE_COMMENTS
+#
+# Note: The Zim `input` module handles these (not duplicated here):
+#   Key bindings (Home/End/Delete/PageUp/PageDown/Ctrl-arrows/Backspace)
+#   History-substring-search Up/Down/Ctrl-P/Ctrl-N bindings (deferred)
 
 # =============================================================================
-# History Configuration
+# History Configuration (additions beyond environment module)
 # =============================================================================
 
 setopt EXTENDED_HISTORY       # Write the history file in the ':start:elapsed;command' format
 setopt INC_APPEND_HISTORY     # Write to the history file immediately, not when the shell exits
-setopt SHARE_HISTORY          # Share history between all sessions
-setopt HIST_IGNORE_DUPS       # Do not record an event that was just recorded again
 setopt HIST_IGNORE_ALL_DUPS   # Delete an old recorded event if a new event is a duplicate
-setopt HIST_IGNORE_SPACE      # Do not record an event starting with a space
 setopt HIST_SAVE_NO_DUPS      # Do not write a duplicate event to the history file
-setopt HIST_VERIFY            # Do not execute immediately upon history expansion
 setopt APPEND_HISTORY         # Append to history file (default)
 setopt HIST_NO_STORE          # Don't store history commands
 setopt HIST_REDUCE_BLANKS     # Remove superfluous blanks from each command line
@@ -45,6 +49,11 @@ ZSH_AUTOSUGGEST_MANUAL_REBIND=1
 # zsh-syntax-highlighting
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
 
+# termtitle
+zstyle ':zim:termtitle' hooks 'precmd' 'preexec'
+zstyle ':zim:termtitle' format '%~'
+zstyle ':zim:termtitle' format-preexec '${1}'
+
 # =============================================================================
 # Zim Framework Initialization
 # =============================================================================
@@ -69,15 +78,3 @@ fi
 
 # Initialize modules
 source "${ZIM_HOME}/init.zsh"
-
-# =============================================================================
-# Post-Init Keybindings
-# =============================================================================
-
-# zsh-history-substring-search keybindings
-zmodload -F zsh/terminfo +p:terminfo
-for key ('^[[A' '^P' ${terminfo[kcuu1]}) bindkey ${key} history-substring-search-up
-for key ('^[[B' '^N' ${terminfo[kcud1]}) bindkey ${key} history-substring-search-down
-for key ('k') bindkey -M vicmd ${key} history-substring-search-up
-for key ('j') bindkey -M vicmd ${key} history-substring-search-down
-unset key
