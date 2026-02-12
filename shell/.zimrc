@@ -12,6 +12,7 @@ zmodule romkatv/powerlevel10k --use degit
 # Completions
 zmodule zsh-users/zsh-completions --fpath src
 zmodule completion
+zmodule Aloxaf/fzf-tab
 
 # Substring search (must be before syntax-highlighting)
 zmodule zsh-users/zsh-history-substring-search

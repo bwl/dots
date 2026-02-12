@@ -14,12 +14,5 @@ fpath=($HOME/.zfunc $HOME/.docker/completions $fpath)
 (( $+commands[bun] )) && [[ ! -f $HOME/.zfunc/_bun ]] && bun completions > $HOME/.zfunc/_bun 2>/dev/null
 (( $+commands[ast-grep] )) && [[ ! -f $HOME/.zfunc/_ast-grep ]] && ast-grep completions zsh > $HOME/.zfunc/_ast-grep 2>/dev/null
 
-# fzf-tab (platform-aware paths)
-if [[ -f "/opt/homebrew/opt/fzf-tab/share/fzf-tab/fzf-tab.zsh" ]]; then
-  source "/opt/homebrew/opt/fzf-tab/share/fzf-tab/fzf-tab.zsh"
-elif [[ -f "/usr/share/zsh/plugins/fzf-tab/fzf-tab.zsh" ]]; then
-  source "/usr/share/zsh/plugins/fzf-tab/fzf-tab.zsh"
-fi
-
-# compinit is handled by Zim's completion module (in core.zsh)
+# compinit and fzf-tab are handled by Zim modules (in core.zsh)
 # after all fpath entries are registered
